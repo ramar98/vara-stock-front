@@ -1,0 +1,293 @@
+/*
+========================================
+TICKET VARA MODAS
+========================================
+*/
+
+.ticket-print-root {
+  position: fixed;
+  left: -10000px;
+  top: 0;
+
+  width: 80mm;
+
+  background: #ffffff;
+
+  color: #000000;
+
+  font-family:
+    Arial,
+    Helvetica,
+    sans-serif;
+
+  font-size: 11px;
+
+  line-height: 1.35;
+}
+
+.ticket {
+  width: 80mm;
+
+  box-sizing: border-box;
+
+  padding:
+    4mm 5mm;
+}
+
+.ticket-header {
+  text-align: center;
+
+  margin-bottom:
+    8px;
+}
+
+.ticket-logo {
+  display: block;
+
+  width: 38mm;
+  max-height: 22mm;
+
+  object-fit: contain;
+
+  margin:
+    0 auto 4px;
+}
+
+.ticket-titulo {
+  font-size: 16px;
+
+  font-weight: 700;
+
+  letter-spacing:
+    1px;
+}
+
+.ticket-subtitulo {
+  margin-top:
+    2px;
+
+  font-size:
+    11px;
+}
+
+.ticket-separador {
+  border-top:
+    1px dashed #000000;
+
+  margin:
+    8px 0;
+}
+
+.ticket-info {
+  display: flex;
+
+  flex-direction:
+    column;
+
+  gap:
+    3px;
+}
+
+.ticket-fila {
+  display: flex;
+
+  justify-content:
+    space-between;
+
+  align-items:
+    flex-start;
+
+  gap:
+    8px;
+}
+
+.ticket-dato {
+  margin-bottom:
+    6px;
+}
+
+.ticket-label {
+  font-size:
+    9px;
+
+  text-transform:
+    uppercase;
+
+  font-weight:
+    700;
+}
+
+.ticket-productos {
+  display: flex;
+
+  flex-direction:
+    column;
+}
+
+.ticket-producto {
+  padding:
+    6px 0;
+
+  border-bottom:
+    1px dotted #999999;
+}
+
+.ticket-producto:last-child {
+  border-bottom:
+    0;
+}
+
+.ticket-producto-nombre {
+  font-weight:
+    700;
+
+  font-size:
+    11px;
+}
+
+.ticket-producto-detalle {
+  font-size:
+    9px;
+
+  margin-top:
+    1px;
+}
+
+.ticket-producto-calculo {
+  display: flex;
+
+  justify-content:
+    space-between;
+
+  gap:
+    10px;
+
+  margin-top:
+    4px;
+}
+
+.ticket-totales {
+  display: flex;
+
+  flex-direction:
+    column;
+
+  gap:
+    4px;
+}
+
+.ticket-total {
+  display: flex;
+
+  justify-content:
+    space-between;
+
+  align-items:
+    center;
+
+  margin-top:
+    8px;
+
+  padding:
+    7px 0;
+
+  border-top:
+    2px solid #000000;
+
+  border-bottom:
+    2px solid #000000;
+
+  font-size:
+    15px;
+
+  font-weight:
+    700;
+}
+
+.ticket-pago {
+  display: flex;
+
+  justify-content:
+    space-between;
+
+  gap:
+    10px;
+}
+
+.ticket-footer {
+  text-align:
+    center;
+
+  font-weight:
+    700;
+
+  padding:
+    6px 0 10px;
+}
+
+.ticket-footer-secundario {
+  margin-top:
+    3px;
+
+  font-size:
+    9px;
+
+  font-weight:
+    400;
+}
+
+/*
+========================================
+IMPRESIÓN
+========================================
+*/
+
+@media print {
+  @page {
+    size: 80mm auto;
+
+    margin: 0;
+  }
+
+  html,
+  body {
+    width: 80mm;
+
+    margin: 0 !important;
+
+    padding: 0 !important;
+
+    background:
+      #ffffff !important;
+  }
+
+  body * {
+    visibility:
+      hidden !important;
+  }
+
+  .ticket-print-root,
+  .ticket-print-root * {
+    visibility:
+      visible !important;
+  }
+
+  .ticket-print-root {
+    position:
+      absolute;
+
+    left: 0;
+
+    top: 0;
+
+    width: 80mm;
+
+    margin: 0;
+
+    padding: 0;
+  }
+
+  .ticket {
+    width: 80mm;
+  }
+}
