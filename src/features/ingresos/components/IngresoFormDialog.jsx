@@ -28,6 +28,12 @@ import DeleteIcon from "@mui/icons-material/Delete";
 
 import api from "../../../services/api";
 
+import ProductoDialog from "../../productos/components/ProductoDialog";
+import VarianteDialog from "../../productos/components/VarianteDialog";
+
+import useProductoMutations from "../../productos/hooks/useProductoMutations";
+import useVariantesProducto from "../../productos/hooks/useVariantesProducto";
+
 const API_URL = (
   import.meta.env.VITE_API_URL ||
   "http://localhost:3001/api"
@@ -56,8 +62,7 @@ const estadoInicial = {
 
 function generarIdTemporal() {
   if (
-    typeof crypto !==
-      "undefined" &&
+    typeof crypto !== "undefined" &&
     crypto.randomUUID
   ) {
     return crypto.randomUUID();
@@ -153,6 +158,10 @@ export default function IngresoFormDialog({
   open,
   proveedores = [],
   productos = [],
+  categorias = [],
+  marcas = [],
+  colores = [],
+  talles = [],
   loading = false,
   error = "",
   errors = [],
@@ -180,6 +189,163 @@ export default function IngresoFormDialog({
 
   /*
    * ==================================
+   * PRODUCTOS CREADOS EN LA COMPRA
+   * ==================================
+   */
+
+  const [
+    productosCreados,
+    setProductosCreados,
+  ] = useState([]);
+
+  /*
+   * ==================================
+   * MODALES
+   * ==================================
+   */
+
+  const [
+    dialogProductoAbierto,
+    setDialogProductoAbierto,
+  ] = useState(false);
+
+  const [
+    dialogVarianteAbierto,
+    setDialogVarianteAbierto,
+  ] = useState(false);
+
+  /*
+   * ==================================
+   * PRODUCTO NUEVO
+   * ==================================
+   */
+
+  const [
+    itemCreacionId,
+    setItemCreacionId,
+  ] = useState(null);
+
+  const [
+    productoNuevo,
+    setProductoNuevo,
+  ] = useState(null);
+
+  /*
+   * ==================================
+   * NUEVA VARIANTE DE PRODUCTO EXISTENTE
+   * ==================================
+   */
+
+  const [
+    productoVarianteNueva,
+    setProductoVarianteNueva,
+  ] = useState(null);
+
+  const [
+    itemVarianteNuevaId,
+    setItemVarianteNuevaId,
+  ] = useState(null);
+
+  /*
+   * ==================================
+   * ERRORES MODALES
+   * ==================================
+   */
+
+  const [
+    errorProductoNuevo,
+    setErrorProductoNuevo,
+  ] = useState("");
+
+  const [
+    errorVarianteNueva,
+    setErrorVarianteNueva,
+  ] = useState("");
+
+  /*
+   * ==================================
+   * MUTACIÓN PRODUCTO
+   * ==================================
+   */
+
+  const {
+    guardarProducto,
+    guardando:
+      guardandoProducto,
+  } = useProductoMutations();
+
+  /*
+   * Puede ser:
+   *
+   * - producto recién creado
+   * - producto existente
+   */
+
+  const productoIdParaVariante =
+    productoNuevo?.id ??
+    productoVarianteNueva?.id ??
+    null;
+
+  const {
+    guardarVariante,
+    guardandoVariante,
+  } = useVariantesProducto(
+    productoIdParaVariante,
+  );
+
+  /*
+   * ==================================
+   * PRODUCTOS DISPONIBLES
+   * ==================================
+   */
+
+  const productosDisponibles =
+    useMemo(() => {
+      const mapa =
+        new Map();
+
+      productos.forEach(
+        (producto) => {
+          mapa.set(
+            String(
+              producto.id,
+            ),
+            producto,
+          );
+        },
+      );
+
+      productosCreados.forEach(
+        (producto) => {
+          mapa.set(
+            String(
+              producto.id,
+            ),
+            producto,
+          );
+        },
+      );
+
+      return Array.from(
+        mapa.values(),
+      ).sort(
+        (a, b) =>
+          String(
+            a.nombre ?? "",
+          ).localeCompare(
+            String(
+              b.nombre ?? "",
+            ),
+            "es",
+          ),
+      );
+    }, [
+      productos,
+      productosCreados,
+    ]);
+
+  /*
+   * ==================================
    * REINICIAR FORMULARIO
    * ==================================
    */
@@ -200,26 +366,66 @@ export default function IngresoFormDialog({
       crearItemVacio(),
     ]);
 
+    setProductosCreados([]);
+
     setErroresFormulario(
       {},
     );
+
+    setDialogProductoAbierto(
+      false,
+    );
+
+    setDialogVarianteAbierto(
+      false,
+    );
+
+    setItemCreacionId(null);
+
+    setProductoNuevo(null);
+
+    setProductoVarianteNueva(
+      null,
+    );
+
+    setItemVarianteNuevaId(
+      null,
+    );
+
+    setErrorProductoNuevo("");
+
+    setErrorVarianteNueva("");
   }, [open]);
 
   /*
    * ==================================
-   * CATEGORÍAS DISPONIBLES
+   * CATEGORÍAS
    * ==================================
-   *
-   * Las obtenemos directamente
-   * de los productos ya cargados.
    */
 
   const categoriasDisponibles =
     useMemo(() => {
+      if (
+        categorias.length >
+        0
+      ) {
+        return [...categorias].sort(
+          (a, b) =>
+            String(
+              a.nombre ?? "",
+            ).localeCompare(
+              String(
+                b.nombre ?? "",
+              ),
+              "es",
+            ),
+        );
+      }
+
       const mapa =
         new Map();
 
-      productos.forEach(
+      productosDisponibles.forEach(
         (producto) => {
           if (
             producto.categoria_id &&
@@ -230,9 +436,8 @@ export default function IngresoFormDialog({
                 producto.categoria_id,
               ),
               {
-                id: String(
+                id:
                   producto.categoria_id,
-                ),
 
                 nombre:
                   producto.categoria,
@@ -245,16 +450,16 @@ export default function IngresoFormDialog({
       return Array.from(
         mapa.values(),
       ).sort(
-        (
-          categoriaA,
-          categoriaB,
-        ) =>
-          categoriaA.nombre.localeCompare(
-            categoriaB.nombre,
+        (a, b) =>
+          a.nombre.localeCompare(
+            b.nombre,
             "es",
           ),
       );
-    }, [productos]);
+    }, [
+      categorias,
+      productosDisponibles,
+    ]);
 
   /*
    * ==================================
@@ -382,10 +587,10 @@ export default function IngresoFormDialog({
       if (
         !item.categoria_id
       ) {
-        return productos;
+        return productosDisponibles;
       }
 
-      return productos.filter(
+      return productosDisponibles.filter(
         (producto) =>
           String(
             producto.categoria_id,
@@ -411,7 +616,7 @@ export default function IngresoFormDialog({
       }
 
       return (
-        productos.find(
+        productosDisponibles.find(
           (producto) =>
             String(
               producto.id,
@@ -440,11 +645,6 @@ export default function IngresoFormDialog({
           categoria_id:
             categoriaId,
 
-          /*
-           * Si cambiamos categoría,
-           * limpiamos la selección
-           * anterior.
-           */
           producto_id:
             "",
 
@@ -475,7 +675,7 @@ export default function IngresoFormDialog({
       productoId,
     ) => {
       const productoSeleccionado =
-        productos.find(
+        productosDisponibles.find(
           (producto) =>
             String(
               producto.id,
@@ -488,12 +688,6 @@ export default function IngresoFormDialog({
       modificarItem(
         item.idTemporal,
         {
-          /*
-           * Si el usuario seleccionó
-           * producto directamente sin
-           * filtrar antes, sincronizamos
-           * también la categoría.
-           */
           categoria_id:
             productoSeleccionado
               ?.categoria_id
@@ -648,6 +842,452 @@ export default function IngresoFormDialog({
 
   /*
    * ==================================
+   * CREAR PRODUCTO NUEVO
+   * ==================================
+   */
+
+  const abrirCrearProducto =
+    (item) => {
+      setItemCreacionId(
+        item.idTemporal,
+      );
+
+      setProductoNuevo(null);
+
+      setProductoVarianteNueva(
+        null,
+      );
+
+      setItemVarianteNuevaId(
+        null,
+      );
+
+      setErrorProductoNuevo("");
+
+      setErrorVarianteNueva("");
+
+      setDialogProductoAbierto(
+        true,
+      );
+    };
+
+  const cerrarCrearProducto =
+    () => {
+      if (
+        guardandoProducto
+      ) {
+        return;
+      }
+
+      setDialogProductoAbierto(
+        false,
+      );
+
+      setItemCreacionId(null);
+
+      setProductoNuevo(null);
+
+      setErrorProductoNuevo("");
+    };
+
+  const guardarProductoNuevo =
+    async (datos) => {
+      setErrorProductoNuevo(
+        "",
+      );
+
+      const resultado =
+        await guardarProducto({
+          productoSeleccionado:
+            null,
+
+          datos,
+        });
+
+      if (
+        !resultado.success
+      ) {
+        setErrorProductoNuevo(
+          resultado.message,
+        );
+
+        return;
+      }
+
+      const productoCreado =
+        resultado.data?.data ??
+        resultado.data;
+
+      if (
+        !productoCreado?.id
+      ) {
+        setErrorProductoNuevo(
+          "El producto fue creado pero no se pudo obtener su ID.",
+        );
+
+        return;
+      }
+
+      setProductosCreados(
+        (
+          estadoActual,
+        ) => [
+          ...estadoActual.filter(
+            (producto) =>
+              String(
+                producto.id,
+              ) !==
+              String(
+                productoCreado.id,
+              ),
+          ),
+
+          productoCreado,
+        ],
+      );
+
+      setProductoNuevo(
+        productoCreado,
+      );
+
+      setDialogProductoAbierto(
+        false,
+      );
+
+      /*
+       * Abrimos inmediatamente
+       * la creación de variante.
+       */
+
+      setDialogVarianteAbierto(
+        true,
+      );
+    };
+
+  /*
+   * ==================================
+   * NUEVA VARIANTE PRODUCTO EXISTENTE
+   * ==================================
+   */
+
+  const abrirCrearVarianteExistente =
+    (item) => {
+      const productoSeleccionado =
+        obtenerProductoSeleccionado(
+          item,
+        );
+
+      if (
+        !productoSeleccionado?.id
+      ) {
+        setErroresFormulario(
+          (estadoActual) => ({
+            ...estadoActual,
+
+            productos:
+              "Primero seleccioná un producto.",
+          }),
+        );
+
+        return;
+      }
+
+      setProductoNuevo(null);
+
+      setItemCreacionId(null);
+
+      setProductoVarianteNueva(
+        productoSeleccionado,
+      );
+
+      setItemVarianteNuevaId(
+        item.idTemporal,
+      );
+
+      setErrorVarianteNueva("");
+
+      setDialogVarianteAbierto(
+        true,
+      );
+    };
+
+  /*
+   * ==================================
+   * CERRAR VARIANTE
+   * ==================================
+   */
+
+  const cerrarCrearVariante =
+    () => {
+      if (
+        guardandoVariante
+      ) {
+        return;
+      }
+
+      setDialogVarianteAbierto(
+        false,
+      );
+
+      setProductoNuevo(null);
+
+      setProductoVarianteNueva(
+        null,
+      );
+
+      setItemCreacionId(null);
+
+      setItemVarianteNuevaId(
+        null,
+      );
+
+      setErrorVarianteNueva("");
+    };
+
+  /*
+   * ==================================
+   * GUARDAR VARIANTE
+   * ==================================
+   */
+
+  const guardarVarianteNueva =
+    async (datos) => {
+      setErrorVarianteNueva(
+        "",
+      );
+
+      /*
+       * Puede ser un producto nuevo
+       * o uno existente.
+       */
+
+      const productoDestino =
+        productoNuevo ??
+        productoVarianteNueva;
+
+      const itemDestinoId =
+        itemCreacionId ??
+        itemVarianteNuevaId;
+
+      if (
+        !productoDestino?.id
+      ) {
+        setErrorVarianteNueva(
+          "No se pudo identificar el producto.",
+        );
+
+        return;
+      }
+
+      /*
+       * El stock SIEMPRE nace en 0.
+       *
+       * El ingreso será quien sume
+       * la mercadería.
+       */
+
+      const resultado =
+        await guardarVariante({
+          varianteSeleccionada:
+            null,
+
+          datos: {
+            ...datos,
+
+            stock_actual: 0,
+          },
+        });
+
+      if (
+        !resultado.success
+      ) {
+        setErrorVarianteNueva(
+          resultado.message,
+        );
+
+        return;
+      }
+
+      const varianteCreada =
+        resultado.data?.data ??
+        resultado.data;
+
+      if (
+        !varianteCreada?.id
+      ) {
+        setErrorVarianteNueva(
+          "La variante fue creada pero no se pudo obtener su ID.",
+        );
+
+        return;
+      }
+
+      /*
+       * Recargamos variantes del
+       * producto para mantener el
+       * selector completo.
+       */
+
+      let variantesActualizadas =
+        [
+          varianteCreada,
+        ];
+
+      try {
+        const {
+          data,
+        } =
+          await api.get(
+            `/variantes/producto/${productoDestino.id}`,
+          );
+
+        const lista =
+          extraerDatos(
+            data,
+          );
+
+        if (
+          Array.isArray(
+            lista,
+          ) &&
+          lista.length >
+            0
+        ) {
+          variantesActualizadas =
+            lista;
+        }
+      } catch {
+        /*
+         * Si falla la recarga,
+         * igualmente dejamos disponible
+         * la variante nueva.
+         */
+      }
+
+      /*
+       * Si era un producto nuevo,
+       * completamos la categoría
+       * visual.
+       */
+
+      const categoria =
+        categoriasDisponibles.find(
+          (elemento) =>
+            String(
+              elemento.id,
+            ) ===
+            String(
+              productoDestino.categoria_id,
+            ),
+        );
+
+      const productoCompleto = {
+        ...productoDestino,
+
+        categoria:
+          productoDestino.categoria ??
+          categoria?.nombre ??
+          null,
+      };
+
+      if (
+        productoNuevo
+      ) {
+        setProductosCreados(
+          (
+            estadoActual,
+          ) => [
+            ...estadoActual.filter(
+              (producto) =>
+                String(
+                  producto.id,
+                ) !==
+                String(
+                  productoCompleto.id,
+                ),
+            ),
+
+            productoCompleto,
+          ],
+        );
+      }
+
+      /*
+       * Selección automática de
+       * producto + variante.
+       */
+
+      setItems(
+        (
+          estadoActual,
+        ) =>
+          estadoActual.map(
+            (item) => {
+              if (
+                item.idTemporal !==
+                itemDestinoId
+              ) {
+                return item;
+              }
+
+              return {
+                ...item,
+
+                categoria_id:
+                  productoCompleto.categoria_id
+                    ? String(
+                        productoCompleto.categoria_id,
+                      )
+                    : "",
+
+                producto_id:
+                  String(
+                    productoCompleto.id,
+                  ),
+
+                variante_id:
+                  String(
+                    varianteCreada.id,
+                  ),
+
+                precio_costo:
+                  String(
+                    varianteCreada.precio_costo ??
+                      datos.precio_costo ??
+                      "",
+                  ),
+
+                variantes:
+                  variantesActualizadas,
+
+                cargandoVariantes:
+                  false,
+              };
+            },
+          ),
+      );
+
+      setDialogVarianteAbierto(
+        false,
+      );
+
+      setProductoNuevo(null);
+
+      setProductoVarianteNueva(
+        null,
+      );
+
+      setItemCreacionId(null);
+
+      setItemVarianteNuevaId(
+        null,
+      );
+
+      setErrorVarianteNueva("");
+    };
+
+  /*
+   * ==================================
    * VALIDAR
    * ==================================
    */
@@ -775,7 +1415,7 @@ export default function IngresoFormDialog({
 
   /*
    * ==================================
-   * GUARDAR
+   * GUARDAR INGRESO
    * ==================================
    */
 
@@ -842,663 +1482,987 @@ export default function IngresoFormDialog({
    */
 
   const cerrar = () => {
-    if (!loading) {
-      onClose();
+    if (
+      loading ||
+      guardandoProducto ||
+      guardandoVariante
+    ) {
+      return;
     }
+
+    onClose();
   };
 
   return (
-    <Dialog
-      open={open}
-      onClose={cerrar}
-      fullWidth
-      maxWidth="xl"
-      PaperProps={{
-        sx: {
-          width:
-            "96vw",
+    <>
+      {/* ======================= */}
+      {/* INGRESO */}
+      {/* ======================= */}
 
-          maxWidth:
-            1550,
+      <Dialog
+        open={open}
+        onClose={cerrar}
+        fullWidth
+        maxWidth="xl"
+        PaperProps={{
+          sx: {
+            width:
+              "96vw",
 
-          maxHeight:
-            "94vh",
+            maxWidth:
+              1550,
 
-          borderRadius:
-            3,
-        },
-      }}
-    >
-      <DialogTitle
-        sx={{
-          fontWeight:
-            700,
+            maxHeight:
+              "94vh",
+
+            borderRadius:
+              3,
+          },
         }}
       >
-        Nuevo ingreso de mercadería
-      </DialogTitle>
-
-      <DialogContent
-        dividers
-        sx={{
-          overflowX:
-            "hidden",
-
-          overflowY:
-            "auto",
-        }}
-      >
-        {/* ======================= */}
-        {/* ERRORES */}
-        {/* ======================= */}
-
-        {error && (
-          <Alert
-            severity="error"
-            sx={{
-              mb: 2,
-            }}
-          >
-            {error}
-          </Alert>
-        )}
-
-        {errors.length >
-          0 && (
-          <Alert
-            severity="error"
-            sx={{
-              mb: 2,
-            }}
-          >
-            {errors.map(
-              (
-                mensaje,
-                indice,
-              ) => (
-                <Typography
-                  key={`${mensaje}-${indice}`}
-                  variant="body2"
-                >
-                  •{" "}
-                  {
-                    mensaje
-                  }
-                </Typography>
-              ),
-            )}
-          </Alert>
-        )}
-
-        {/* ======================= */}
-        {/* DATOS DEL INGRESO */}
-        {/* ======================= */}
-
-        <Grid
-          container
-          spacing={2}
+        <DialogTitle
+          sx={{
+            fontWeight:
+              700,
+          }}
         >
-          <Grid
-            size={{
-              xs: 12,
-              md: 4,
-            }}
-          >
-            <TextField
-              select
-              fullWidth
-              required
-              label="Proveedor"
-              name="proveedor_id"
-              value={
-                formulario.proveedor_id
-              }
-              onChange={
-                cambiarCampo
-              }
-              error={Boolean(
-                erroresFormulario.proveedor_id,
-              )}
-              helperText={
-                erroresFormulario.proveedor_id
-              }
-              disabled={
-                loading
-              }
-            >
-              <MenuItem value="">
-                Seleccionar proveedor
-              </MenuItem>
+          Nuevo ingreso de mercadería
+        </DialogTitle>
 
-              {proveedores.map(
+        <DialogContent
+          dividers
+          sx={{
+            overflowX:
+              "hidden",
+
+            overflowY:
+              "auto",
+          }}
+        >
+          {/* ======================= */}
+          {/* ERRORES */}
+          {/* ======================= */}
+
+          {error && (
+            <Alert
+              severity="error"
+              sx={{
+                mb: 2,
+              }}
+            >
+              {error}
+            </Alert>
+          )}
+
+          {errors.length >
+            0 && (
+            <Alert
+              severity="error"
+              sx={{
+                mb: 2,
+              }}
+            >
+              {errors.map(
                 (
-                  proveedor,
+                  mensaje,
+                  indice,
                 ) => (
-                  <MenuItem
-                    key={
-                      proveedor.id
-                    }
-                    value={
-                      proveedor.id
-                    }
+                  <Typography
+                    key={`${mensaje}-${indice}`}
+                    variant="body2"
                   >
-                    {
-                      proveedor.nombre
-                    }
-                  </MenuItem>
+                    • {mensaje}
+                  </Typography>
                 ),
               )}
-            </TextField>
-          </Grid>
+            </Alert>
+          )}
+
+          {/* ======================= */}
+          {/* DATOS INGRESO */}
+          {/* ======================= */}
 
           <Grid
-            size={{
-              xs: 12,
-              md: 4,
-            }}
+            container
+            spacing={2}
           >
-            <TextField
-              fullWidth
-              required
-              type="date"
-              label="Fecha"
-              name="fecha"
-              value={
-                formulario.fecha
-              }
-              onChange={
-                cambiarCampo
-              }
-              error={Boolean(
-                erroresFormulario.fecha,
-              )}
-              helperText={
-                erroresFormulario.fecha
-              }
-              disabled={
-                loading
-              }
-              slotProps={{
-                inputLabel: {
-                  shrink:
-                    true,
-                },
+            <Grid
+              size={{
+                xs: 12,
+                md: 4,
               }}
-            />
-          </Grid>
+            >
+              <TextField
+                select
+                fullWidth
+                required
+                label="Proveedor"
+                name="proveedor_id"
+                value={
+                  formulario.proveedor_id
+                }
+                onChange={
+                  cambiarCampo
+                }
+                error={Boolean(
+                  erroresFormulario.proveedor_id,
+                )}
+                helperText={
+                  erroresFormulario.proveedor_id
+                }
+                disabled={
+                  loading
+                }
+              >
+                <MenuItem value="">
+                  Seleccionar proveedor
+                </MenuItem>
 
-          <Grid
-            size={{
-              xs: 12,
-              md: 4,
-            }}
-          >
-            <TextField
-              fullWidth
-              label="Número de comprobante"
-              name="numero_comprobante"
-              value={
-                formulario.numero_comprobante
-              }
-              onChange={
-                cambiarCampo
-              }
-              disabled={
-                loading
-              }
-              slotProps={{
-                htmlInput: {
-                  maxLength:
-                    50,
-                },
+                {proveedores.map(
+                  (
+                    proveedor,
+                  ) => (
+                    <MenuItem
+                      key={
+                        proveedor.id
+                      }
+                      value={
+                        proveedor.id
+                      }
+                    >
+                      {
+                        proveedor.nombre
+                      }
+                    </MenuItem>
+                  ),
+                )}
+              </TextField>
+            </Grid>
+
+            <Grid
+              size={{
+                xs: 12,
+                md: 4,
               }}
-            />
+            >
+              <TextField
+                fullWidth
+                required
+                type="date"
+                label="Fecha"
+                name="fecha"
+                value={
+                  formulario.fecha
+                }
+                onChange={
+                  cambiarCampo
+                }
+                error={Boolean(
+                  erroresFormulario.fecha,
+                )}
+                helperText={
+                  erroresFormulario.fecha
+                }
+                disabled={
+                  loading
+                }
+                slotProps={{
+                  inputLabel: {
+                    shrink:
+                      true,
+                  },
+                }}
+              />
+            </Grid>
+
+            <Grid
+              size={{
+                xs: 12,
+                md: 4,
+              }}
+            >
+              <TextField
+                fullWidth
+                label="Número de comprobante"
+                name="numero_comprobante"
+                value={
+                  formulario.numero_comprobante
+                }
+                onChange={
+                  cambiarCampo
+                }
+                disabled={
+                  loading
+                }
+                slotProps={{
+                  htmlInput: {
+                    maxLength:
+                      50,
+                  },
+                }}
+              />
+            </Grid>
+
+            <Grid
+              size={{
+                xs: 12,
+              }}
+            >
+              <TextField
+                fullWidth
+                multiline
+                minRows={2}
+                label="Observaciones"
+                name="observaciones"
+                value={
+                  formulario.observaciones
+                }
+                onChange={
+                  cambiarCampo
+                }
+                disabled={
+                  loading
+                }
+              />
+            </Grid>
           </Grid>
 
-          <Grid
-            size={{
-              xs: 12,
+          <Divider
+            sx={{
+              my: 3,
             }}
-          >
-            <TextField
-              fullWidth
-              multiline
-              minRows={2}
-              label="Observaciones"
-              name="observaciones"
-              value={
-                formulario.observaciones
-              }
-              onChange={
-                cambiarCampo
-              }
-              disabled={
-                loading
-              }
-            />
-          </Grid>
-        </Grid>
+          />
 
-        <Divider
-          sx={{
-            my: 3,
-          }}
-        />
+          {/* ======================= */}
+          {/* PRODUCTOS */}
+          {/* ======================= */}
 
-        {/* ======================= */}
-        {/* PRODUCTOS */}
-        {/* ======================= */}
-
-        <Stack
-          direction={{
-            xs:
-              "column",
-
-            sm:
-              "row",
-          }}
-          spacing={2}
-          sx={{
-            mb: 2,
-
-            justifyContent:
-              "space-between",
-
-            alignItems: {
+          <Stack
+            direction={{
               xs:
-                "stretch",
+                "column",
 
               sm:
-                "center",
-            },
-          }}
-        >
-          <Box>
-            <Typography
-              variant="h6"
-              sx={{
-                fontWeight:
-                  700,
-              }}
-            >
-              Productos
-            </Typography>
-
-            <Typography
-              variant="body2"
-              color="text.secondary"
-            >
-              Filtrá por categoría y seleccioná las variantes y cantidades recibidas.
-            </Typography>
-          </Box>
-
-          <Button
-            variant="outlined"
-            startIcon={
-              <AddIcon />
-            }
-            onClick={
-              agregarItem
-            }
-            disabled={
-              loading
-            }
-          >
-            Agregar producto
-          </Button>
-        </Stack>
-
-        {erroresFormulario.productos && (
-          <Alert
-            severity="warning"
+                "row",
+            }}
+            spacing={2}
             sx={{
               mb: 2,
+
+              justifyContent:
+                "space-between",
+
+              alignItems: {
+                xs:
+                  "stretch",
+
+                sm:
+                  "center",
+              },
             }}
           >
-            {
-              erroresFormulario.productos
-            }
-          </Alert>
-        )}
+            <Box>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight:
+                    700,
+                }}
+              >
+                Productos
+              </Typography>
 
-        {/* ======================= */}
-        {/* ITEMS */}
-        {/* ======================= */}
+              <Typography
+                variant="body2"
+                color="text.secondary"
+              >
+                Seleccioná productos y variantes existentes o crealos durante la compra.
+              </Typography>
+            </Box>
 
-        <Stack spacing={2}>
-          {items.map(
-            (
-              item,
-              indice,
-            ) => {
-              const productosFiltrados =
-                obtenerProductosFiltrados(
-                  item,
-                );
+            <Button
+              variant="outlined"
+              startIcon={
+                <AddIcon />
+              }
+              onClick={
+                agregarItem
+              }
+              disabled={
+                loading
+              }
+            >
+              Agregar producto
+            </Button>
+          </Stack>
 
-              const productoSeleccionado =
-                obtenerProductoSeleccionado(
-                  item,
-                );
+          {erroresFormulario.productos && (
+            <Alert
+              severity="warning"
+              sx={{
+                mb: 2,
+              }}
+            >
+              {
+                erroresFormulario.productos
+              }
+            </Alert>
+          )}
 
-              return (
-                <Paper
-                  key={
-                    item.idTemporal
-                  }
-                  variant="outlined"
-                  sx={{
-                    p: {
-                      xs:
-                        1.5,
+          {/* ======================= */}
+          {/* ITEMS */}
+          {/* ======================= */}
 
-                      md:
-                        2,
-                    },
+          <Stack spacing={2}>
+            {items.map(
+              (
+                item,
+                indice,
+              ) => {
+                const productosFiltrados =
+                  obtenerProductosFiltrados(
+                    item,
+                  );
 
-                    borderRadius:
-                      2.5,
-                  }}
-                >
-                  <Typography
-                    variant="subtitle2"
-                    color="text.secondary"
+                const productoSeleccionado =
+                  obtenerProductoSeleccionado(
+                    item,
+                  );
+
+                return (
+                  <Paper
+                    key={
+                      item.idTemporal
+                    }
+                    variant="outlined"
                     sx={{
-                      mb: 2,
-                      fontWeight:
-                        700,
-                    }}
-                  >
-                    Producto{" "}
-                    {indice +
-                      1}
-                  </Typography>
-
-                  {/* ================= */}
-                  {/* SELECCIÓN */}
-                  {/* ================= */}
-
-                  <Grid
-                    container
-                    spacing={2}
-                    sx={{
-                      alignItems:
-                        "flex-start",
-                    }}
-                  >
-                    {/* CATEGORÍA */}
-
-                    <Grid
-                      size={{
+                      p: {
                         xs:
-                          12,
+                          1.5,
 
                         md:
-                          3,
-                      }}
-                    >
-                      <TextField
-                        select
-                        fullWidth
-                        label="Categoría"
-                        value={
-                          item.categoria_id
-                        }
-                        onChange={(
-                          event,
-                        ) =>
-                          seleccionarCategoria(
-                            item,
-                            event
-                              .target
-                              .value,
-                          )
-                        }
-                        disabled={
-                          loading
-                        }
-                      >
-                        <MenuItem value="">
-                          Todas las categorías
-                        </MenuItem>
+                          2,
+                      },
 
-                        {categoriasDisponibles.map(
-                          (
-                            categoria,
-                          ) => (
-                            <MenuItem
-                              key={
-                                categoria.id
-                              }
-                              value={
-                                categoria.id
-                              }
-                            >
-                              {
-                                categoria.nombre
-                              }
-                            </MenuItem>
-                          ),
-                        )}
-                      </TextField>
-                    </Grid>
+                      borderRadius:
+                        2.5,
+                    }}
+                  >
+                    {/* ================= */}
+                    {/* ENCABEZADO */}
+                    {/* ================= */}
 
-                    {/* PRODUCTO */}
-
-                    <Grid
-                      size={{
+                    <Stack
+                      direction={{
                         xs:
-                          12,
+                          "column",
 
-                        md:
-                          5,
+                        sm:
+                          "row",
+                      }}
+                      spacing={1.5}
+                      sx={{
+                        mb: 2,
+
+                        justifyContent:
+                          "space-between",
+
+                        alignItems: {
+                          xs:
+                            "stretch",
+
+                          sm:
+                            "center",
+                        },
                       }}
                     >
-                      <TextField
-                        select
-                        fullWidth
-                        label="Producto"
-                        value={
-                          item.producto_id
-                        }
-                        onChange={(
-                          event,
-                        ) =>
-                          seleccionarProducto(
-                            item,
-                            event
-                              .target
-                              .value,
-                          )
-                        }
-                        disabled={
-                          loading
-                        }
+                      <Typography
+                        variant="subtitle2"
+                        color="text.secondary"
                         sx={{
-                          minWidth:
-                            0,
-
-                          "& .MuiSelect-select":
-                            {
-                              overflow:
-                                "hidden",
-
-                              textOverflow:
-                                "ellipsis",
-
-                              whiteSpace:
-                                "nowrap",
-                            },
+                          fontWeight:
+                            700,
                         }}
                       >
-                        <MenuItem value="">
-                          Seleccionar producto
-                        </MenuItem>
+                        Producto{" "}
+                        {indice +
+                          1}
+                      </Typography>
 
-                        {productosFiltrados.map(
-                          (
-                            producto,
-                          ) => (
-                            <MenuItem
-                              key={
-                                producto.id
-                              }
-                              value={
-                                producto.id
-                              }
-                            >
-                              {
-                                producto.codigo
-                              }{" "}
-                              -{" "}
-                              {
-                                producto.nombre
-                              }
-                            </MenuItem>
-                          ),
-                        )}
-                      </TextField>
-                    </Grid>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={
+                          <AddIcon />
+                        }
+                        onClick={() =>
+                          abrirCrearProducto(
+                            item,
+                          )
+                        }
+                        disabled={
+                          loading
+                        }
+                      >
+                        Nuevo producto
+                      </Button>
+                    </Stack>
 
-                    {/* IMAGEN */}
+                    {/* ================= */}
+                    {/* PRODUCTO */}
+                    {/* ================= */}
 
                     <Grid
-                      size={{
-                        xs:
-                          12,
-
-                        md:
-                          4,
+                      container
+                      spacing={2}
+                      sx={{
+                        alignItems:
+                          "flex-start",
                       }}
                     >
-                      {productoSeleccionado ? (
-                        <Paper
-                          variant="outlined"
-                          sx={{
-                            p: 1.25,
+                      <Grid
+                        size={{
+                          xs:
+                            12,
 
-                            minHeight:
-                              92,
-
-                            display:
-                              "flex",
-
-                            alignItems:
-                              "center",
-
-                            gap:
-                              1.5,
-
-                            borderRadius:
-                              2,
-                          }}
+                          md:
+                            3,
+                        }}
+                      >
+                        <TextField
+                          select
+                          fullWidth
+                          label="Categoría"
+                          value={
+                            item.categoria_id
+                          }
+                          onChange={(
+                            event,
+                          ) =>
+                            seleccionarCategoria(
+                              item,
+                              event
+                                .target
+                                .value,
+                            )
+                          }
+                          disabled={
+                            loading
+                          }
                         >
-                          <Box
-                            component="img"
-                            src={obtenerUrlImagen(
-                              productoSeleccionado.imagen,
-                            )}
-                            alt={
-                              productoSeleccionado.nombre
-                            }
-                            onError={(
-                              event,
-                            ) => {
-                              event.currentTarget.src =
-                                "/no-image.png";
-                            }}
-                            sx={{
-                              width:
-                                78,
+                          <MenuItem value="">
+                            Todas las categorías
+                          </MenuItem>
 
-                              height:
-                                78,
+                          {categoriasDisponibles.map(
+                            (
+                              categoria,
+                            ) => (
+                              <MenuItem
+                                key={
+                                  categoria.id
+                                }
+                                value={
+                                  categoria.id
+                                }
+                              >
+                                {
+                                  categoria.nombre
+                                }
+                              </MenuItem>
+                            ),
+                          )}
+                        </TextField>
+                      </Grid>
+
+                      <Grid
+                        size={{
+                          xs:
+                            12,
+
+                          md:
+                            5,
+                        }}
+                      >
+                        <TextField
+                          select
+                          fullWidth
+                          label="Producto"
+                          value={
+                            item.producto_id
+                          }
+                          onChange={(
+                            event,
+                          ) =>
+                            seleccionarProducto(
+                              item,
+                              event
+                                .target
+                                .value,
+                            )
+                          }
+                          disabled={
+                            loading
+                          }
+                        >
+                          <MenuItem value="">
+                            Seleccionar producto
+                          </MenuItem>
+
+                          {productosFiltrados.map(
+                            (
+                              producto,
+                            ) => (
+                              <MenuItem
+                                key={
+                                  producto.id
+                                }
+                                value={
+                                  producto.id
+                                }
+                              >
+                                {
+                                  producto.codigo
+                                }{" "}
+                                -{" "}
+                                {
+                                  producto.nombre
+                                }
+                              </MenuItem>
+                            ),
+                          )}
+                        </TextField>
+                      </Grid>
+
+                      {/* IMAGEN */}
+
+                      <Grid
+                        size={{
+                          xs:
+                            12,
+
+                          md:
+                            4,
+                        }}
+                      >
+                        {productoSeleccionado ? (
+                          <Paper
+                            variant="outlined"
+                            sx={{
+                              p: 1.25,
+
+                              minHeight:
+                                92,
+
+                              display:
+                                "flex",
+
+                              alignItems:
+                                "center",
+
+                              gap:
+                                1.5,
+
+                              borderRadius:
+                                2,
+                            }}
+                          >
+                            <Box
+                              component="img"
+                              src={obtenerUrlImagen(
+                                productoSeleccionado.imagen,
+                              )}
+                              alt={
+                                productoSeleccionado.nombre
+                              }
+                              onError={(
+                                event,
+                              ) => {
+                                event.currentTarget.src =
+                                  "/no-image.png";
+                              }}
+                              sx={{
+                                width:
+                                  78,
+
+                                height:
+                                  78,
+
+                                borderRadius:
+                                  2,
+
+                                objectFit:
+                                  "cover",
+
+                                flexShrink:
+                                  0,
+
+                                border:
+                                  "1px solid",
+
+                                borderColor:
+                                  "divider",
+                              }}
+                            />
+
+                            <Box
+                              sx={{
+                                minWidth:
+                                  0,
+                              }}
+                            >
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  fontWeight:
+                                    700,
+                                }}
+                              >
+                                {
+                                  productoSeleccionado.nombre
+                                }
+                              </Typography>
+
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                sx={{
+                                  display:
+                                    "block",
+                                }}
+                              >
+                                Código:{" "}
+                                {productoSeleccionado.codigo ||
+                                  "-"}
+                              </Typography>
+
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                sx={{
+                                  display:
+                                    "block",
+                                }}
+                              >
+                                Categoría:{" "}
+                                {productoSeleccionado.categoria ||
+                                  "Sin categoría"}
+                              </Typography>
+                            </Box>
+                          </Paper>
+                        ) : (
+                          <Box
+                            sx={{
+                              minHeight:
+                                92,
+
+                              border:
+                                "1px dashed",
+
+                              borderColor:
+                                "divider",
 
                               borderRadius:
                                 2,
 
-                              objectFit:
-                                "cover",
+                              display:
+                                "flex",
 
-                              flexShrink:
-                                0,
+                              alignItems:
+                                "center",
 
-                              border:
-                                "1px solid",
+                              justifyContent:
+                                "center",
 
-                              borderColor:
-                                "divider",
-                            }}
-                          />
+                              color:
+                                "text.secondary",
 
-                          <Box
-                            sx={{
-                              minWidth:
-                                0,
+                              fontSize:
+                                13,
                             }}
                           >
-                            <Typography
-                              variant="body2"
-                              sx={{
-                                fontWeight:
-                                  700,
-
-                                overflow:
-                                  "hidden",
-
-                                textOverflow:
-                                  "ellipsis",
-
-                                whiteSpace:
-                                  "nowrap",
-                              }}
-                            >
-                              {
-                                productoSeleccionado.nombre
-                              }
-                            </Typography>
-
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                              sx={{
-                                display:
-                                  "block",
-                              }}
-                            >
-                              Código:{" "}
-                              {productoSeleccionado.codigo ||
-                                "-"}
-                            </Typography>
-
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                              sx={{
-                                display:
-                                  "block",
-                              }}
-                            >
-                              Categoría:{" "}
-                              {productoSeleccionado.categoria ||
-                                "Sin categoría"}
-                            </Typography>
+                            Seleccioná un producto
                           </Box>
-                        </Paper>
-                      ) : (
+                        )}
+                      </Grid>
+                    </Grid>
+
+                    <Divider
+                      sx={{
+                        my: 2,
+                      }}
+                    />
+
+                    {/* ================= */}
+                    {/* VARIANTE */}
+                    {/* ================= */}
+
+                    <Grid
+                      container
+                      spacing={2}
+                      sx={{
+                        alignItems:
+                          "flex-start",
+                      }}
+                    >
+                      <Grid
+                        size={{
+                          xs:
+                            12,
+
+                          md:
+                            4,
+                        }}
+                      >
+                        <Stack
+                          spacing={0.75}
+                        >
+                          <TextField
+                            select
+                            fullWidth
+                            label="Variante"
+                            value={
+                              item.variante_id
+                            }
+                            onChange={(
+                              event,
+                            ) =>
+                              seleccionarVariante(
+                                item,
+                                event
+                                  .target
+                                  .value,
+                              )
+                            }
+                            disabled={
+                              loading ||
+                              !item.producto_id ||
+                              item.cargandoVariantes
+                            }
+                          >
+                            <MenuItem value="">
+                              {item.cargandoVariantes
+                                ? "Cargando..."
+                                : "Seleccionar variante"}
+                            </MenuItem>
+
+                            {item.variantes.map(
+                              (
+                                variante,
+                              ) => (
+                                <MenuItem
+                                  key={
+                                    variante.id
+                                  }
+                                  value={
+                                    variante.id
+                                  }
+                                >
+                                  {variante.color ||
+                                    "Sin color"}{" "}
+                                  /{" "}
+                                  {variante.talle ||
+                                    "Sin talle"}
+                                </MenuItem>
+                              ),
+                            )}
+                          </TextField>
+
+                          <Button
+                            size="small"
+                            variant="text"
+                            startIcon={
+                              <AddIcon />
+                            }
+                            onClick={() =>
+                              abrirCrearVarianteExistente(
+                                item,
+                              )
+                            }
+                            disabled={
+                              loading ||
+                              !item.producto_id
+                            }
+                            sx={{
+                              alignSelf:
+                                "flex-start",
+
+                              px: 0.5,
+                            }}
+                          >
+                            Nueva variante
+                          </Button>
+                        </Stack>
+                      </Grid>
+
+                      {/* CANTIDAD */}
+
+                      <Grid
+                        size={{
+                          xs:
+                            12,
+
+                          sm:
+                            6,
+
+                          md:
+                            2,
+                        }}
+                      >
+                        <TextField
+                          fullWidth
+                          type="number"
+                          label="Cantidad"
+                          value={
+                            item.cantidad
+                          }
+                          onChange={(
+                            event,
+                          ) =>
+                            modificarItem(
+                              item.idTemporal,
+                              {
+                                cantidad:
+                                  event
+                                    .target
+                                    .value,
+                              },
+                            )
+                          }
+                          disabled={
+                            loading
+                          }
+                          slotProps={{
+                            htmlInput:
+                              {
+                                min:
+                                  1,
+
+                                step:
+                                  1,
+                              },
+                          }}
+                        />
+                      </Grid>
+
+                      {/* COSTO */}
+
+                      <Grid
+                        size={{
+                          xs:
+                            12,
+
+                          sm:
+                            6,
+
+                          md:
+                            3,
+                        }}
+                      >
+                        <TextField
+                          fullWidth
+                          type="number"
+                          label="Costo unitario"
+                          value={
+                            item.precio_costo
+                          }
+                          onChange={(
+                            event,
+                          ) =>
+                            modificarItem(
+                              item.idTemporal,
+                              {
+                                precio_costo:
+                                  event
+                                    .target
+                                    .value,
+                              },
+                            )
+                          }
+                          disabled={
+                            loading
+                          }
+                          slotProps={{
+                            htmlInput:
+                              {
+                                min:
+                                  0,
+
+                                step:
+                                  "0.01",
+                              },
+                          }}
+                        />
+                      </Grid>
+
+                      {/* SUBTOTAL */}
+
+                      <Grid
+                        size={{
+                          xs:
+                            10,
+
+                          md:
+                            2,
+                        }}
+                      >
                         <Box
                           sx={{
                             minHeight:
-                              92,
+                              56,
 
-                            border:
-                              "1px dashed",
+                            display:
+                              "flex",
 
-                            borderColor:
-                              "divider",
+                            flexDirection:
+                              "column",
 
-                            borderRadius:
-                              2,
+                            justifyContent:
+                              "center",
+                          }}
+                        >
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                          >
+                            Subtotal
+                          </Typography>
+
+                          <Typography
+                            sx={{
+                              fontWeight:
+                                700,
+                            }}
+                          >
+                            {formatearMoneda(
+                              Number(
+                                item.cantidad ||
+                                  0,
+                              ) *
+                                Number(
+                                  item.precio_costo ||
+                                    0,
+                                ),
+                            )}
+                          </Typography>
+                        </Box>
+                      </Grid>
+
+                      {/* ELIMINAR */}
+
+                      <Grid
+                        size={{
+                          xs:
+                            2,
+
+                          md:
+                            1,
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            minHeight:
+                              56,
 
                             display:
                               "flex",
@@ -1508,413 +2472,198 @@ export default function IngresoFormDialog({
 
                             justifyContent:
                               "center",
-
-                            color:
-                              "text.secondary",
-
-                            fontSize:
-                              13,
                           }}
                         >
-                          Seleccioná un producto
+                          <IconButton
+                            color="error"
+                            onClick={() =>
+                              eliminarItem(
+                                item.idTemporal,
+                              )
+                            }
+                            disabled={
+                              loading
+                            }
+                          >
+                            <DeleteIcon />
+                          </IconButton>
                         </Box>
-                      )}
+                      </Grid>
                     </Grid>
-                  </Grid>
-
-                  <Divider
-                    sx={{
-                      my: 2,
-                    }}
-                  />
-
-                  {/* ================= */}
-                  {/* DATOS VARIANTE */}
-                  {/* ================= */}
-
-                  <Grid
-                    container
-                    spacing={2}
-                    sx={{
-                      alignItems:
-                        "flex-start",
-                    }}
-                  >
-                    {/* VARIANTE */}
-
-                    <Grid
-                      size={{
-                        xs:
-                          12,
-
-                        md:
-                          4,
-                      }}
-                    >
-                      <TextField
-                        select
-                        fullWidth
-                        label="Variante"
-                        value={
-                          item.variante_id
-                        }
-                        onChange={(
-                          event,
-                        ) =>
-                          seleccionarVariante(
-                            item,
-                            event
-                              .target
-                              .value,
-                          )
-                        }
-                        disabled={
-                          loading ||
-                          !item.producto_id ||
-                          item.cargandoVariantes
-                        }
-                      >
-                        <MenuItem value="">
-                          {item.cargandoVariantes
-                            ? "Cargando..."
-                            : "Seleccionar variante"}
-                        </MenuItem>
-
-                        {item.variantes.map(
-                          (
-                            variante,
-                          ) => (
-                            <MenuItem
-                              key={
-                                variante.id
-                              }
-                              value={
-                                variante.id
-                              }
-                            >
-                              {variante.color ||
-                                "Sin color"}{" "}
-                              /{" "}
-                              {variante.talle ||
-                                "Sin talle"}
-                            </MenuItem>
-                          ),
-                        )}
-                      </TextField>
-                    </Grid>
-
-                    {/* CANTIDAD */}
-
-                    <Grid
-                      size={{
-                        xs:
-                          12,
-
-                        sm:
-                          6,
-
-                        md:
-                          2,
-                      }}
-                    >
-                      <TextField
-                        fullWidth
-                        type="number"
-                        label="Cantidad"
-                        value={
-                          item.cantidad
-                        }
-                        onChange={(
-                          event,
-                        ) =>
-                          modificarItem(
-                            item.idTemporal,
-                            {
-                              cantidad:
-                                event
-                                  .target
-                                  .value,
-                            },
-                          )
-                        }
-                        disabled={
-                          loading
-                        }
-                        slotProps={{
-                          htmlInput:
-                            {
-                              min:
-                                1,
-
-                              step:
-                                1,
-                            },
-                        }}
-                      />
-                    </Grid>
-
-                    {/* COSTO */}
-
-                    <Grid
-                      size={{
-                        xs:
-                          12,
-
-                        sm:
-                          6,
-
-                        md:
-                          3,
-                      }}
-                    >
-                      <TextField
-                        fullWidth
-                        type="number"
-                        label="Costo unitario"
-                        value={
-                          item.precio_costo
-                        }
-                        onChange={(
-                          event,
-                        ) =>
-                          modificarItem(
-                            item.idTemporal,
-                            {
-                              precio_costo:
-                                event
-                                  .target
-                                  .value,
-                            },
-                          )
-                        }
-                        disabled={
-                          loading
-                        }
-                        slotProps={{
-                          htmlInput:
-                            {
-                              min:
-                                0,
-
-                              step:
-                                "0.01",
-                            },
-                        }}
-                      />
-                    </Grid>
-
-                    {/* SUBTOTAL */}
-
-                    <Grid
-                      size={{
-                        xs:
-                          10,
-
-                        md:
-                          2,
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          minHeight:
-                            56,
-
-                          display:
-                            "flex",
-
-                          flexDirection:
-                            "column",
-
-                          justifyContent:
-                            "center",
-                        }}
-                      >
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                        >
-                          Subtotal
-                        </Typography>
-
-                        <Typography
-                          sx={{
-                            fontWeight:
-                              700,
-                          }}
-                        >
-                          {formatearMoneda(
-                            Number(
-                              item.cantidad ||
-                                0,
-                            ) *
-                              Number(
-                                item.precio_costo ||
-                                  0,
-                              ),
-                          )}
-                        </Typography>
-                      </Box>
-                    </Grid>
-
-                    {/* ELIMINAR */}
-
-                    <Grid
-                      size={{
-                        xs:
-                          2,
-
-                        md:
-                          1,
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          minHeight:
-                            56,
-
-                          display:
-                            "flex",
-
-                          alignItems:
-                            "center",
-
-                          justifyContent:
-                            "center",
-                        }}
-                      >
-                        <IconButton
-                          color="error"
-                          onClick={() =>
-                            eliminarItem(
-                              item.idTemporal,
-                            )
-                          }
-                          disabled={
-                            loading
-                          }
-                          aria-label={`Eliminar ítem ${
-                            indice +
-                            1
-                          }`}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </Box>
-                    </Grid>
-                  </Grid>
-                </Paper>
-              );
-            },
-          )}
-        </Stack>
-
-        {/* ======================= */}
-        {/* TOTAL */}
-        {/* ======================= */}
-
-        <Stack
-          direction="row"
-          sx={{
-            mt: 3,
-
-            justifyContent:
-              "flex-end",
-          }}
-        >
-          <Paper
-            variant="outlined"
-            sx={{
-              px: 3,
-
-              py: 2,
-
-              minWidth: {
-                xs:
-                  "100%",
-
-                sm:
-                  280,
+                  </Paper>
+                );
               },
+            )}
+          </Stack>
 
-              borderRadius:
-                2,
+          {/* ======================= */}
+          {/* TOTAL */}
+          {/* ======================= */}
+
+          <Stack
+            direction="row"
+            sx={{
+              mt: 3,
+
+              justifyContent:
+                "flex-end",
             }}
           >
-            <Typography
-              variant="body2"
-              color="text.secondary"
-            >
-              Total del ingreso
-            </Typography>
-
-            <Typography
-              variant="h5"
+            <Paper
+              variant="outlined"
               sx={{
-                fontWeight:
-                  700,
+                px: 3,
 
-                mt:
-                  0.5,
+                py: 2,
+
+                minWidth: {
+                  xs:
+                    "100%",
+
+                  sm:
+                    280,
+                },
+
+                borderRadius:
+                  2,
               }}
             >
-              {formatearMoneda(
-                total,
-              )}
-            </Typography>
-          </Paper>
-        </Stack>
-      </DialogContent>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+              >
+                Total del ingreso
+              </Typography>
+
+              <Typography
+                variant="h5"
+                sx={{
+                  fontWeight:
+                    700,
+
+                  mt:
+                    0.5,
+                }}
+              >
+                {formatearMoneda(
+                  total,
+                )}
+              </Typography>
+            </Paper>
+          </Stack>
+        </DialogContent>
+
+        {/* ======================= */}
+        {/* BOTONES */}
+        {/* ======================= */}
+
+        <DialogActions
+          sx={{
+            px: 3,
+            py: 2,
+            gap: 1,
+          }}
+        >
+          <Button
+            variant="outlined"
+            onClick={
+              cerrar
+            }
+            disabled={
+              loading
+            }
+          >
+            Cancelar
+          </Button>
+
+          <Button
+            variant="contained"
+            onClick={
+              guardar
+            }
+            disabled={
+              loading
+            }
+            startIcon={
+              loading ? (
+                <CircularProgress
+                  size={18}
+                  color="inherit"
+                />
+              ) : null
+            }
+          >
+            {loading
+              ? "Registrando..."
+              : "Registrar ingreso"}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* ======================= */}
-      {/* ACCIONES */}
+      {/* NUEVO PRODUCTO */}
       {/* ======================= */}
 
-      <DialogActions
-        sx={{
-          px: 3,
-
-          py: 2,
-
-          gap: 1,
-
-          flexShrink:
-            0,
+      <ProductoDialog
+        open={
+          dialogProductoAbierto
+        }
+        producto={{
+          proveedor_id:
+            formulario.proveedor_id ||
+            "",
         }}
-      >
-        <Button
-          variant="outlined"
-          onClick={
-            cerrar
-          }
-          disabled={
-            loading
-          }
-        >
-          Cancelar
-        </Button>
+        categorias={
+          categorias
+        }
+        marcas={
+          marcas
+        }
+        proveedores={
+          proveedores
+        }
+        loading={
+          guardandoProducto
+        }
+        error={
+          errorProductoNuevo
+        }
+        onClose={
+          cerrarCrearProducto
+        }
+        onGuardar={
+          guardarProductoNuevo
+        }
+      />
 
-        <Button
-          variant="contained"
-          onClick={
-            guardar
-          }
-          disabled={
-            loading
-          }
-          startIcon={
-            loading ? (
-              <CircularProgress
-                size={18}
-                color="inherit"
-              />
-            ) : null
-          }
-        >
-          {loading
-            ? "Registrando..."
-            : "Registrar ingreso"}
-        </Button>
-      </DialogActions>
-    </Dialog>
+      {/* ======================= */}
+      {/* NUEVA VARIANTE */}
+      {/* ======================= */}
+
+      <VarianteDialog
+        open={
+          dialogVarianteAbierto
+        }
+        variante={null}
+        colores={
+          colores
+        }
+        talles={
+          talles
+        }
+        loading={
+          guardandoVariante
+        }
+        error={
+          errorVarianteNueva
+        }
+        onClose={
+          cerrarCrearVariante
+        }
+        onGuardar={
+          guardarVarianteNueva
+        }
+      />
+    </>
   );
 }

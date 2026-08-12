@@ -99,8 +99,26 @@ export default function IngresosPage() {
     isError: errorProductos,
   } = useProductos();
 
+  /*
+   * ==================================
+   * CATÁLOGOS
+   * ==================================
+   */
+
   const proveedores =
     catalogos?.proveedores ?? [];
+
+  const categorias =
+    catalogos?.categorias ?? [];
+
+  const marcas =
+    catalogos?.marcas ?? [];
+
+  const colores =
+    catalogos?.colores ?? [];
+
+  const talles =
+    catalogos?.talles ?? [];
 
   const productos = useMemo(
     () =>
@@ -159,6 +177,12 @@ export default function IngresosPage() {
     );
   };
 
+  /*
+   * ==================================
+   * FILTROS
+   * ==================================
+   */
+
   const cambiarFiltro = (event) => {
     const { name, value } =
       event.target;
@@ -176,6 +200,12 @@ export default function IngresosPage() {
       proveedorId: "",
     });
   };
+
+  /*
+   * ==================================
+   * NUEVO INGRESO
+   * ==================================
+   */
 
   const abrirNuevoIngreso = () => {
     setErrorFormulario("");
@@ -221,6 +251,12 @@ export default function IngresosPage() {
       "success",
     );
   };
+
+  /*
+   * ==================================
+   * COLUMNAS
+   * ==================================
+   */
 
   const columnas = [
     {
@@ -328,7 +364,10 @@ export default function IngresosPage() {
 
   return (
     <Box>
+      {/* ======================= */}
       {/* ENCABEZADO */}
+      {/* ======================= */}
+
       <Stack
         direction={{
           xs: "column",
@@ -384,16 +423,18 @@ export default function IngresosPage() {
 
       {(errorCatalogos ||
         errorProductos) && (
-          <Alert
-            severity="warning"
-            sx={{ mb: 2 }}
-          >
-            No se pudieron cargar todos los datos necesarios para
-            registrar ingresos.
-          </Alert>
-        )}
+        <Alert
+          severity="warning"
+          sx={{ mb: 2 }}
+        >
+          No se pudieron cargar todos los datos necesarios para registrar ingresos.
+        </Alert>
+      )}
 
+      {/* ======================= */}
       {/* FILTROS */}
+      {/* ======================= */}
+
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Grid
@@ -503,7 +544,8 @@ export default function IngresosPage() {
                 spacing={1.5}
                 sx={{
                   width: "100%",
-                  justifyContent: "flex-end",
+                  justifyContent:
+                    "flex-end",
                   alignItems: {
                     xs: "stretch",
                     sm: "center",
@@ -513,7 +555,9 @@ export default function IngresosPage() {
               >
                 <Button
                   variant="outlined"
-                  onClick={limpiarFiltros}
+                  onClick={
+                    limpiarFiltros
+                  }
                   sx={{
                     minWidth: 120,
                     height: 42,
@@ -557,7 +601,10 @@ export default function IngresosPage() {
         </CardContent>
       </Card>
 
+      {/* ======================= */}
       {/* TABLA */}
+      {/* ======================= */}
+
       <Card>
         <CardContent>
           {cargandoIngresos && (
@@ -592,17 +639,16 @@ export default function IngresosPage() {
           {!cargandoIngresos &&
             !errorIngresos &&
             ingresos.length ===
-            0 && (
+              0 && (
               <Alert severity="info">
-                No hay ingresos registrados para los filtros
-                seleccionados.
+                No hay ingresos registrados para los filtros seleccionados.
               </Alert>
             )}
 
           {!cargandoIngresos &&
             !errorIngresos &&
             ingresos.length >
-            0 && (
+              0 && (
               <DataGrid
                 rows={ingresos}
                 columns={columnas}
@@ -635,21 +681,28 @@ export default function IngresosPage() {
                   border: 0,
 
                   "& .MuiDataGrid-row":
-                  {
-                    cursor:
-                      "pointer",
-                  },
+                    {
+                      cursor:
+                        "pointer",
+                    },
                 }}
               />
             )}
         </CardContent>
       </Card>
 
+      {/* ======================= */}
       {/* NUEVO INGRESO */}
+      {/* ======================= */}
+
       <IngresoFormDialog
         open={dialogIngresoAbierto}
         proveedores={proveedores}
         productos={productos}
+        categorias={categorias}
+        marcas={marcas}
+        colores={colores}
+        talles={talles}
         loading={registrandoIngreso}
         error={errorFormulario}
         errors={erroresFormulario}
@@ -661,7 +714,10 @@ export default function IngresosPage() {
         }
       />
 
+      {/* ======================= */}
       {/* DETALLE */}
+      {/* ======================= */}
+
       <IngresoDetalleDialog
         open={Boolean(
           ingresoDetalleId,
@@ -676,7 +732,10 @@ export default function IngresosPage() {
         }
       />
 
+      {/* ======================= */}
       {/* NOTIFICACIÓN */}
+      {/* ======================= */}
+
       <Snackbar
         open={notificacion.open}
         autoHideDuration={4000}
