@@ -80,17 +80,49 @@ function crearItemVacio() {
 
     producto_id: "",
 
-    variante_id: "",
-
-    cantidad: "1",
-
-    precio_costo: "",
-
     variantes: [],
 
-    cargandoVariantes:
-      false,
+    cargandoVariantes: false,
   };
+}
+
+function prepararVariantes(
+  variantes = [],
+  variantesAnteriores = [],
+) {
+  const mapaAnterior =
+    new Map(
+      variantesAnteriores.map(
+        (variante) => [
+          String(variante.id),
+          variante,
+        ],
+      ),
+    );
+
+  return variantes.map(
+    (variante) => {
+      const anterior =
+        mapaAnterior.get(
+          String(variante.id),
+        );
+
+      return {
+        ...variante,
+
+        cantidad:
+          anterior?.cantidad ??
+          "0",
+
+        precio_costo:
+          anterior?.precio_costo ??
+          String(
+            variante.precio_costo ??
+              "",
+          ),
+      };
+    },
+  );
 }
 
 function formatearMoneda(valor) {
@@ -108,9 +140,7 @@ function formatearMoneda(valor) {
 
 function extraerDatos(respuesta) {
   if (
-    Array.isArray(
-      respuesta,
-    )
+    Array.isArray(respuesta)
   ) {
     return respuesta;
   }
@@ -189,7 +219,7 @@ export default function IngresoFormDialog({
 
   /*
    * ==================================
-   * PRODUCTOS CREADOS EN LA COMPRA
+   * PRODUCTOS CREADOS EN EL INGRESO
    * ==================================
    */
 
@@ -232,7 +262,7 @@ export default function IngresoFormDialog({
 
   /*
    * ==================================
-   * NUEVA VARIANTE DE PRODUCTO EXISTENTE
+   * NUEVA VARIANTE PRODUCTO EXISTENTE
    * ==================================
    */
 
@@ -248,7 +278,7 @@ export default function IngresoFormDialog({
 
   /*
    * ==================================
-   * ERRORES MODALES
+   * ERRORES
    * ==================================
    */
 
@@ -264,7 +294,7 @@ export default function IngresoFormDialog({
 
   /*
    * ==================================
-   * MUTACIÓN PRODUCTO
+   * MUTACIONES
    * ==================================
    */
 
@@ -273,13 +303,6 @@ export default function IngresoFormDialog({
     guardando:
       guardandoProducto,
   } = useProductoMutations();
-
-  /*
-   * Puede ser:
-   *
-   * - producto recién creado
-   * - producto existente
-   */
 
   const productoIdParaVariante =
     productoNuevo?.id ??
@@ -307,9 +330,7 @@ export default function IngresoFormDialog({
       productos.forEach(
         (producto) => {
           mapa.set(
-            String(
-              producto.id,
-            ),
+            String(producto.id),
             producto,
           );
         },
@@ -318,9 +339,7 @@ export default function IngresoFormDialog({
       productosCreados.forEach(
         (producto) => {
           mapa.set(
-            String(
-              producto.id,
-            ),
+            String(producto.id),
             producto,
           );
         },
@@ -346,7 +365,7 @@ export default function IngresoFormDialog({
 
   /*
    * ==================================
-   * REINICIAR FORMULARIO
+   * REINICIAR
    * ==================================
    */
 
@@ -368,9 +387,7 @@ export default function IngresoFormDialog({
 
     setProductosCreados([]);
 
-    setErroresFormulario(
-      {},
-    );
+    setErroresFormulario({});
 
     setDialogProductoAbierto(
       false,
@@ -451,8 +468,12 @@ export default function IngresoFormDialog({
         mapa.values(),
       ).sort(
         (a, b) =>
-          a.nombre.localeCompare(
-            b.nombre,
+          String(
+            a.nombre ?? "",
+          ).localeCompare(
+            String(
+              b.nombre ?? "",
+            ),
             "es",
           ),
       );
@@ -463,7 +484,7 @@ export default function IngresoFormDialog({
 
   /*
    * ==================================
-   * TOTAL
+   * TOTAL GENERAL
    * ==================================
    */
 
@@ -471,34 +492,50 @@ export default function IngresoFormDialog({
     useMemo(() => {
       return items.reduce(
         (
-          acumulado,
+          totalProductos,
           item,
         ) => {
-          const cantidad =
-            Number(
-              item.cantidad,
-            );
+          const subtotalProducto =
+            item.variantes.reduce(
+              (
+                acumulado,
+                variante,
+              ) => {
+                const cantidad =
+                  Number(
+                    variante.cantidad ??
+                      0,
+                  );
 
-          const precioCosto =
-            Number(
-              item.precio_costo,
-            );
+                const costo =
+                  Number(
+                    variante.precio_costo ??
+                      0,
+                  );
 
-          if (
-            Number.isNaN(
-              cantidad,
-            ) ||
-            Number.isNaN(
-              precioCosto,
-            )
-          ) {
-            return acumulado;
-          }
+                if (
+                  Number.isNaN(
+                    cantidad,
+                  ) ||
+                  Number.isNaN(
+                    costo,
+                  )
+                ) {
+                  return acumulado;
+                }
+
+                return (
+                  acumulado +
+                  cantidad *
+                    costo
+                );
+              },
+              0,
+            );
 
           return (
-            acumulado +
-            cantidad *
-              precioCosto
+            totalProductos +
+            subtotalProducto
           );
         },
         0,
@@ -568,7 +605,6 @@ export default function IngresoFormDialog({
             idTemporal
               ? {
                   ...item,
-
                   ...cambios,
                 }
               : item,
@@ -578,7 +614,58 @@ export default function IngresoFormDialog({
 
   /*
    * ==================================
-   * FILTRAR PRODUCTOS
+   * MODIFICAR VARIANTE
+   * ==================================
+   */
+
+  const modificarVariante =
+    (
+      itemId,
+      varianteId,
+      cambios,
+    ) => {
+      setItems(
+        (
+          estadoActual,
+        ) =>
+          estadoActual.map(
+            (item) => {
+              if (
+                item.idTemporal !==
+                itemId
+              ) {
+                return item;
+              }
+
+              return {
+                ...item,
+
+                variantes:
+                  item.variantes.map(
+                    (
+                      variante,
+                    ) =>
+                      String(
+                        variante.id,
+                      ) ===
+                      String(
+                        varianteId,
+                      )
+                        ? {
+                            ...variante,
+                            ...cambios,
+                          }
+                        : variante,
+                  ),
+              };
+            },
+          ),
+      );
+    };
+
+  /*
+   * ==================================
+   * PRODUCTOS FILTRADOS
    * ==================================
    */
 
@@ -630,6 +717,52 @@ export default function IngresoFormDialog({
 
   /*
    * ==================================
+   * SUBTOTAL PRODUCTO
+   * ==================================
+   */
+
+  const obtenerSubtotalProducto =
+    (item) => {
+      return item.variantes.reduce(
+        (
+          acumulado,
+          variante,
+        ) => {
+          const cantidad =
+            Number(
+              variante.cantidad ??
+                0,
+            );
+
+          const costo =
+            Number(
+              variante.precio_costo ??
+                0,
+            );
+
+          if (
+            Number.isNaN(
+              cantidad,
+            ) ||
+            Number.isNaN(
+              costo,
+            )
+          ) {
+            return acumulado;
+          }
+
+          return (
+            acumulado +
+            cantidad *
+              costo
+          );
+        },
+        0,
+      );
+    };
+
+  /*
+   * ==================================
    * CAMBIAR CATEGORÍA
    * ==================================
    */
@@ -648,18 +781,41 @@ export default function IngresoFormDialog({
           producto_id:
             "",
 
-          variante_id:
-            "",
-
-          precio_costo:
-            "",
-
           variantes:
             [],
 
           cargandoVariantes:
             false,
         },
+      );
+    };
+
+  /*
+   * ==================================
+   * CARGAR VARIANTES PRODUCTO
+   * ==================================
+   */
+
+  const cargarVariantesProducto =
+    async (
+      productoId,
+      variantesAnteriores = [],
+    ) => {
+      const {
+        data,
+      } =
+        await api.get(
+          `/variantes/producto/${productoId}`,
+        );
+
+      const variantes =
+        extraerDatos(
+          data,
+        );
+
+      return prepararVariantes(
+        variantes,
+        variantesAnteriores,
       );
     };
 
@@ -699,14 +855,7 @@ export default function IngresoFormDialog({
           producto_id:
             productoId,
 
-          variante_id:
-            "",
-
-          precio_costo:
-            "",
-
-          variantes:
-            [],
+          variantes: [],
 
           cargandoVariantes:
             Boolean(
@@ -720,16 +869,9 @@ export default function IngresoFormDialog({
       }
 
       try {
-        const {
-          data,
-        } =
-          await api.get(
-            `/variantes/producto/${productoId}`,
-          );
-
         const variantes =
-          extraerDatos(
-            data,
+          await cargarVariantesProducto(
+            productoId,
           );
 
         modificarItem(
@@ -745,8 +887,7 @@ export default function IngresoFormDialog({
         modificarItem(
           item.idTemporal,
           {
-            variantes:
-              [],
+            variantes: [],
 
             cargandoVariantes:
               false,
@@ -757,43 +898,7 @@ export default function IngresoFormDialog({
 
   /*
    * ==================================
-   * SELECCIONAR VARIANTE
-   * ==================================
-   */
-
-  const seleccionarVariante =
-    (
-      item,
-      varianteId,
-    ) => {
-      const variante =
-        item.variantes.find(
-          (elemento) =>
-            Number(
-              elemento.id,
-            ) ===
-            Number(
-              varianteId,
-            ),
-        );
-
-      modificarItem(
-        item.idTemporal,
-        {
-          variante_id:
-            varianteId,
-
-          precio_costo:
-            variante
-              ?.precio_costo ??
-            "",
-        },
-      );
-    };
-
-  /*
-   * ==================================
-   * AGREGAR ITEM
+   * AGREGAR PRODUCTO
    * ==================================
    */
 
@@ -803,7 +908,6 @@ export default function IngresoFormDialog({
         estadoActual,
       ) => [
         ...estadoActual,
-
         crearItemVacio(),
       ],
     );
@@ -811,7 +915,7 @@ export default function IngresoFormDialog({
 
   /*
    * ==================================
-   * ELIMINAR ITEM
+   * ELIMINAR PRODUCTO
    * ==================================
    */
 
@@ -928,6 +1032,26 @@ export default function IngresoFormDialog({
         return;
       }
 
+      const categoria =
+        categoriasDisponibles.find(
+          (elemento) =>
+            String(
+              elemento.id,
+            ) ===
+            String(
+              productoCreado.categoria_id,
+            ),
+        );
+
+      const productoCompleto = {
+        ...productoCreado,
+
+        categoria:
+          productoCreado.categoria ??
+          categoria?.nombre ??
+          null,
+      };
+
       setProductosCreados(
         (
           estadoActual,
@@ -938,16 +1062,16 @@ export default function IngresoFormDialog({
                 producto.id,
               ) !==
               String(
-                productoCreado.id,
+                productoCompleto.id,
               ),
           ),
 
-          productoCreado,
+          productoCompleto,
         ],
       );
 
       setProductoNuevo(
-        productoCreado,
+        productoCompleto,
       );
 
       setDialogProductoAbierto(
@@ -955,8 +1079,9 @@ export default function IngresoFormDialog({
       );
 
       /*
-       * Abrimos inmediatamente
-       * la creación de variante.
+       * Al crear producto nuevo,
+       * pedimos crear la primera
+       * variante.
        */
 
       setDialogVarianteAbierto(
@@ -981,7 +1106,9 @@ export default function IngresoFormDialog({
         !productoSeleccionado?.id
       ) {
         setErroresFormulario(
-          (estadoActual) => ({
+          (
+            estadoActual,
+          ) => ({
             ...estadoActual,
 
             productos:
@@ -1056,11 +1183,6 @@ export default function IngresoFormDialog({
         "",
       );
 
-      /*
-       * Puede ser un producto nuevo
-       * o uno existente.
-       */
-
       const productoDestino =
         productoNuevo ??
         productoVarianteNueva;
@@ -1080,10 +1202,8 @@ export default function IngresoFormDialog({
       }
 
       /*
-       * El stock SIEMPRE nace en 0.
-       *
-       * El ingreso será quien sume
-       * la mercadería.
+       * Stock inicial siempre 0.
+       * El stock entra con la compra.
        */
 
       const resultado =
@@ -1123,52 +1243,72 @@ export default function IngresoFormDialog({
       }
 
       /*
-       * Recargamos variantes del
-       * producto para mantener el
-       * selector completo.
+       * Recuperamos las cantidades
+       * que ya había escrito el usuario.
        */
 
+      const itemActual =
+        items.find(
+          (item) =>
+            item.idTemporal ===
+            itemDestinoId,
+        );
+
       let variantesActualizadas =
-        [
-          varianteCreada,
-        ];
+        prepararVariantes(
+          [
+            varianteCreada,
+          ],
+          itemActual?.variantes ??
+            [],
+        );
 
       try {
-        const {
-          data,
-        } =
-          await api.get(
-            `/variantes/producto/${productoDestino.id}`,
+        variantesActualizadas =
+          await cargarVariantesProducto(
+            productoDestino.id,
+            itemActual?.variantes ??
+              [],
           );
-
-        const lista =
-          extraerDatos(
-            data,
-          );
-
-        if (
-          Array.isArray(
-            lista,
-          ) &&
-          lista.length >
-            0
-        ) {
-          variantesActualizadas =
-            lista;
-        }
       } catch {
-        /*
-         * Si falla la recarga,
-         * igualmente dejamos disponible
-         * la variante nueva.
-         */
+        // Mantenemos al menos
+        // la variante creada.
       }
 
       /*
-       * Si era un producto nuevo,
-       * completamos la categoría
-       * visual.
+       * La nueva variante conserva
+       * cantidad 0 y su costo inicial.
        */
+
+      variantesActualizadas =
+        variantesActualizadas.map(
+          (variante) => {
+            if (
+              String(
+                variante.id,
+              ) !==
+              String(
+                varianteCreada.id,
+              )
+            ) {
+              return variante;
+            }
+
+            return {
+              ...variante,
+
+              cantidad:
+                "0",
+
+              precio_costo:
+                String(
+                  varianteCreada.precio_costo ??
+                    datos.precio_costo ??
+                    "",
+                ),
+            };
+          },
+        );
 
       const categoria =
         categoriasDisponibles.find(
@@ -1212,11 +1352,6 @@ export default function IngresoFormDialog({
         );
       }
 
-      /*
-       * Selección automática de
-       * producto + variante.
-       */
-
       setItems(
         (
           estadoActual,
@@ -1243,18 +1378,6 @@ export default function IngresoFormDialog({
                 producto_id:
                   String(
                     productoCompleto.id,
-                  ),
-
-                variante_id:
-                  String(
-                    varianteCreada.id,
-                  ),
-
-                precio_costo:
-                  String(
-                    varianteCreada.precio_costo ??
-                      datos.precio_costo ??
-                      "",
                   ),
 
                 variantes:
@@ -1310,94 +1433,125 @@ export default function IngresoFormDialog({
         "Ingresá la fecha.";
     }
 
+    const productosIngreso =
+      [];
+
     const variantesUsadas =
       new Set();
 
-    const itemsValidos =
-      items.filter(
-        (item) =>
-          item.producto_id ||
-          item.variante_id ||
-          item.precio_costo,
-      );
-
-    if (
-      itemsValidos.length ===
-      0
-    ) {
-      nuevosErrores.productos =
-        "Agregá al menos una variante.";
-    }
-
-    itemsValidos.forEach(
+    items.forEach(
       (
         item,
-        indice,
+        indiceProducto,
       ) => {
-        const numero =
-          indice + 1;
-
-        const varianteId =
-          Number(
-            item.variante_id,
-          );
-
-        const cantidad =
-          Number(
-            item.cantidad,
-          );
-
-        const costo =
-          Number(
-            item.precio_costo,
-          );
-
         if (
           !item.producto_id
         ) {
-          nuevosErrores.productos =
-            `Seleccioná el producto del ítem ${numero}.`;
-        } else if (
-          !varianteId
-        ) {
-          nuevosErrores.productos =
-            `Seleccioná la variante del ítem ${numero}.`;
-        } else if (
-          !Number.isInteger(
-            cantidad,
-          ) ||
-          cantidad <= 0
-        ) {
-          nuevosErrores.productos =
-            `La cantidad del ítem ${numero} debe ser mayor que cero.`;
-        } else if (
-          item.precio_costo ===
-            "" ||
-          Number.isNaN(
-            costo,
-          ) ||
-          costo < 0
-        ) {
-          nuevosErrores.productos =
-            `El costo del ítem ${numero} no es válido.`;
-        } else if (
-          variantesUsadas.has(
-            varianteId,
-          )
-        ) {
-          nuevosErrores.productos =
-            `La variante del ítem ${numero} está repetida.`;
+          return;
         }
 
-        if (
-          varianteId
-        ) {
-          variantesUsadas.add(
-            varianteId,
-          );
-        }
+        item.variantes.forEach(
+          (
+            variante,
+          ) => {
+            const cantidad =
+              Number(
+                variante.cantidad ??
+                  0,
+              );
+
+            const costo =
+              Number(
+                variante.precio_costo,
+              );
+
+            /*
+             * Cantidad 0 significa
+             * "esta variante no llegó".
+             */
+
+            if (
+              Number.isNaN(
+                cantidad,
+              ) ||
+              !Number.isInteger(
+                cantidad,
+              ) ||
+              cantidad < 0
+            ) {
+              nuevosErrores.productos =
+                `La cantidad de una variante del producto ${
+                  indiceProducto +
+                  1
+                } no es válida.`;
+
+              return;
+            }
+
+            if (
+              cantidad === 0
+            ) {
+              return;
+            }
+
+            if (
+              variante.precio_costo ===
+                "" ||
+              Number.isNaN(
+                costo,
+              ) ||
+              costo < 0
+            ) {
+              nuevosErrores.productos =
+                `El costo de una variante del producto ${
+                  indiceProducto +
+                  1
+                } no es válido.`;
+
+              return;
+            }
+
+            const varianteId =
+              Number(
+                variante.id,
+              );
+
+            if (
+              variantesUsadas.has(
+                varianteId,
+              )
+            ) {
+              nuevosErrores.productos =
+                "Una misma variante fue ingresada más de una vez.";
+
+              return;
+            }
+
+            variantesUsadas.add(
+              varianteId,
+            );
+
+            productosIngreso.push({
+              variante_id:
+                varianteId,
+
+              cantidad,
+
+              precio_costo:
+                costo,
+            });
+          },
+        );
       },
     );
+
+    if (
+      productosIngreso.length ===
+      0
+    ) {
+      nuevosErrores.productos =
+        "Ingresá una cantidad mayor que cero en al menos una variante.";
+    }
 
     setErroresFormulario(
       nuevosErrores,
@@ -1409,13 +1563,13 @@ export default function IngresoFormDialog({
           nuevosErrores,
         ).length === 0,
 
-      itemsValidos,
+      productosIngreso,
     };
   };
 
   /*
    * ==================================
-   * GUARDAR INGRESO
+   * GUARDAR
    * ==================================
    */
 
@@ -1450,24 +1604,7 @@ export default function IngresoFormDialog({
           null,
 
         productos:
-          validacion.itemsValidos.map(
-            (item) => ({
-              variante_id:
-                Number(
-                  item.variante_id,
-                ),
-
-              cantidad:
-                Number(
-                  item.cantidad,
-                ),
-
-              precio_costo:
-                Number(
-                  item.precio_costo,
-                ),
-            }),
-          ),
+          validacion.productosIngreso,
       };
 
       await onGuardar(
@@ -1495,10 +1632,6 @@ export default function IngresoFormDialog({
 
   return (
     <>
-      {/* ======================= */}
-      {/* INGRESO */}
-      {/* ======================= */}
-
       <Dialog
         open={open}
         onClose={cerrar}
@@ -1579,7 +1712,7 @@ export default function IngresoFormDialog({
           )}
 
           {/* ======================= */}
-          {/* DATOS INGRESO */}
+          {/* DATOS DEL INGRESO */}
           {/* ======================= */}
 
           <Grid
@@ -1776,7 +1909,7 @@ export default function IngresoFormDialog({
                 variant="body2"
                 color="text.secondary"
               >
-                Seleccioná productos y variantes existentes o crealos durante la compra.
+                Seleccioná el producto e ingresá la cantidad recibida de cada variante.
               </Typography>
             </Box>
 
@@ -1829,6 +1962,11 @@ export default function IngresoFormDialog({
                     item,
                   );
 
+                const subtotalProducto =
+                  obtenerSubtotalProducto(
+                    item,
+                  );
+
                 return (
                   <Paper
                     key={
@@ -1837,20 +1975,15 @@ export default function IngresoFormDialog({
                     variant="outlined"
                     sx={{
                       p: {
-                        xs:
-                          1.5,
-
-                        md:
-                          2,
+                        xs: 1.5,
+                        md: 2,
                       },
 
                       borderRadius:
                         2.5,
                     }}
                   >
-                    {/* ================= */}
                     {/* ENCABEZADO */}
-                    {/* ================= */}
 
                     <Stack
                       direction={{
@@ -1889,28 +2022,46 @@ export default function IngresoFormDialog({
                           1}
                       </Typography>
 
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        startIcon={
-                          <AddIcon />
-                        }
-                        onClick={() =>
-                          abrirCrearProducto(
-                            item,
-                          )
-                        }
-                        disabled={
-                          loading
-                        }
+                      <Stack
+                        direction="row"
+                        spacing={1}
                       >
-                        Nuevo producto
-                      </Button>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          startIcon={
+                            <AddIcon />
+                          }
+                          onClick={() =>
+                            abrirCrearProducto(
+                              item,
+                            )
+                          }
+                          disabled={
+                            loading
+                          }
+                        >
+                          Nuevo producto
+                        </Button>
+
+                        <IconButton
+                          color="error"
+                          onClick={() =>
+                            eliminarItem(
+                              item.idTemporal,
+                            )
+                          }
+                          disabled={
+                            loading
+                          }
+                          aria-label="Eliminar producto"
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Stack>
                     </Stack>
 
-                    {/* ================= */}
                     {/* PRODUCTO */}
-                    {/* ================= */}
 
                     <Grid
                       container
@@ -1922,11 +2073,8 @@ export default function IngresoFormDialog({
                     >
                       <Grid
                         size={{
-                          xs:
-                            12,
-
-                          md:
-                            3,
+                          xs: 12,
+                          md: 3,
                         }}
                       >
                         <TextField
@@ -1977,11 +2125,8 @@ export default function IngresoFormDialog({
 
                       <Grid
                         size={{
-                          xs:
-                            12,
-
-                          md:
-                            5,
+                          xs: 12,
+                          md: 5,
                         }}
                       >
                         <TextField
@@ -2038,11 +2183,8 @@ export default function IngresoFormDialog({
 
                       <Grid
                         size={{
-                          xs:
-                            12,
-
-                          md:
-                            4,
+                          xs: 12,
+                          md: 4,
                         }}
                       >
                         {productoSeleccionado ? (
@@ -2187,90 +2329,62 @@ export default function IngresoFormDialog({
                       </Grid>
                     </Grid>
 
-                    <Divider
-                      sx={{
-                        my: 2,
-                      }}
-                    />
+                    {/* VARIANTES */}
 
-                    {/* ================= */}
-                    {/* VARIANTE */}
-                    {/* ================= */}
+                    {item.producto_id && (
+                      <>
+                        <Divider
+                          sx={{
+                            my: 2,
+                          }}
+                        />
 
-                    <Grid
-                      container
-                      spacing={2}
-                      sx={{
-                        alignItems:
-                          "flex-start",
-                      }}
-                    >
-                      <Grid
-                        size={{
-                          xs:
-                            12,
-
-                          md:
-                            4,
-                        }}
-                      >
                         <Stack
-                          spacing={0.75}
-                        >
-                          <TextField
-                            select
-                            fullWidth
-                            label="Variante"
-                            value={
-                              item.variante_id
-                            }
-                            onChange={(
-                              event,
-                            ) =>
-                              seleccionarVariante(
-                                item,
-                                event
-                                  .target
-                                  .value,
-                              )
-                            }
-                            disabled={
-                              loading ||
-                              !item.producto_id ||
-                              item.cargandoVariantes
-                            }
-                          >
-                            <MenuItem value="">
-                              {item.cargandoVariantes
-                                ? "Cargando..."
-                                : "Seleccionar variante"}
-                            </MenuItem>
+                          direction={{
+                            xs:
+                              "column",
 
-                            {item.variantes.map(
-                              (
-                                variante,
-                              ) => (
-                                <MenuItem
-                                  key={
-                                    variante.id
-                                  }
-                                  value={
-                                    variante.id
-                                  }
-                                >
-                                  {variante.color ||
-                                    "Sin color"}{" "}
-                                  /{" "}
-                                  {variante.talle ||
-                                    "Sin talle"}
-                                </MenuItem>
-                              ),
-                            )}
-                          </TextField>
+                            sm:
+                              "row",
+                          }}
+                          spacing={1}
+                          sx={{
+                            mb: 1.5,
+
+                            justifyContent:
+                              "space-between",
+
+                            alignItems: {
+                              xs:
+                                "stretch",
+
+                              sm:
+                                "center",
+                            },
+                          }}
+                        >
+                          <Box>
+                            <Typography
+                              variant="subtitle1"
+                              sx={{
+                                fontWeight:
+                                  700,
+                              }}
+                            >
+                              Variantes
+                            </Typography>
+
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
+                              Colocá 0 en las variantes que no llegaron.
+                            </Typography>
+                          </Box>
 
                           <Button
                             size="small"
-                            variant="text"
+                            variant="outlined"
                             startIcon={
                               <AddIcon />
                             }
@@ -2281,215 +2395,429 @@ export default function IngresoFormDialog({
                             }
                             disabled={
                               loading ||
-                              !item.producto_id
+                              item.cargandoVariantes
                             }
-                            sx={{
-                              alignSelf:
-                                "flex-start",
-
-                              px: 0.5,
-                            }}
                           >
                             Nueva variante
                           </Button>
                         </Stack>
-                      </Grid>
 
-                      {/* CANTIDAD */}
-
-                      <Grid
-                        size={{
-                          xs:
-                            12,
-
-                          sm:
-                            6,
-
-                          md:
-                            2,
-                        }}
-                      >
-                        <TextField
-                          fullWidth
-                          type="number"
-                          label="Cantidad"
-                          value={
-                            item.cantidad
-                          }
-                          onChange={(
-                            event,
-                          ) =>
-                            modificarItem(
-                              item.idTemporal,
-                              {
-                                cantidad:
-                                  event
-                                    .target
-                                    .value,
-                              },
-                            )
-                          }
-                          disabled={
-                            loading
-                          }
-                          slotProps={{
-                            htmlInput:
-                              {
-                                min:
-                                  1,
-
-                                step:
-                                  1,
-                              },
-                          }}
-                        />
-                      </Grid>
-
-                      {/* COSTO */}
-
-                      <Grid
-                        size={{
-                          xs:
-                            12,
-
-                          sm:
-                            6,
-
-                          md:
-                            3,
-                        }}
-                      >
-                        <TextField
-                          fullWidth
-                          type="number"
-                          label="Costo unitario"
-                          value={
-                            item.precio_costo
-                          }
-                          onChange={(
-                            event,
-                          ) =>
-                            modificarItem(
-                              item.idTemporal,
-                              {
-                                precio_costo:
-                                  event
-                                    .target
-                                    .value,
-                              },
-                            )
-                          }
-                          disabled={
-                            loading
-                          }
-                          slotProps={{
-                            htmlInput:
-                              {
-                                min:
-                                  0,
-
-                                step:
-                                  "0.01",
-                              },
-                          }}
-                        />
-                      </Grid>
-
-                      {/* SUBTOTAL */}
-
-                      <Grid
-                        size={{
-                          xs:
-                            10,
-
-                          md:
-                            2,
-                        }}
-                      >
-                        <Box
-                          sx={{
-                            minHeight:
-                              56,
-
-                            display:
-                              "flex",
-
-                            flexDirection:
-                              "column",
-
-                            justifyContent:
-                              "center",
-                          }}
-                        >
-                          <Typography
-                            variant="body2"
-                            color="text.secondary"
-                          >
-                            Subtotal
-                          </Typography>
-
-                          <Typography
+                        {item.cargandoVariantes && (
+                          <Box
                             sx={{
-                              fontWeight:
-                                700,
+                              py: 3,
+
+                              display:
+                                "flex",
+
+                              justifyContent:
+                                "center",
                             }}
                           >
-                            {formatearMoneda(
-                              Number(
-                                item.cantidad ||
-                                  0,
-                              ) *
-                                Number(
-                                  item.precio_costo ||
-                                    0,
-                                ),
-                            )}
-                          </Typography>
-                        </Box>
-                      </Grid>
+                            <CircularProgress
+                              size={24}
+                            />
+                          </Box>
+                        )}
 
-                      {/* ELIMINAR */}
+                        {!item.cargandoVariantes &&
+                          item.variantes.length ===
+                            0 && (
+                            <Alert
+                              severity="info"
+                            >
+                              Este producto todavía no tiene variantes. Creá una con el botón "Nueva variante".
+                            </Alert>
+                          )}
 
-                      <Grid
-                        size={{
-                          xs:
-                            2,
+                        {!item.cargandoVariantes &&
+                          item.variantes.length >
+                            0 && (
+                            <Stack
+                              spacing={1}
+                            >
+                              {/* ENCABEZADO */}
 
-                          md:
-                            1,
-                        }}
-                      >
-                        <Box
-                          sx={{
-                            minHeight:
-                              56,
+                              <Grid
+                                container
+                                spacing={1.5}
+                                sx={{
+                                  display: {
+                                    xs:
+                                      "none",
 
-                            display:
-                              "flex",
+                                    md:
+                                      "flex",
+                                  },
 
-                            alignItems:
-                              "center",
+                                  px: 1,
 
-                            justifyContent:
-                              "center",
-                          }}
-                        >
-                          <IconButton
-                            color="error"
-                            onClick={() =>
-                              eliminarItem(
-                                item.idTemporal,
-                              )
-                            }
-                            disabled={
-                              loading
-                            }
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        </Box>
-                      </Grid>
-                    </Grid>
+                                  color:
+                                    "text.secondary",
+                                }}
+                              >
+                                <Grid
+                                  size={{
+                                    md: 4,
+                                  }}
+                                >
+                                  <Typography
+                                    variant="caption"
+                                    sx={{
+                                      fontWeight:
+                                        700,
+                                    }}
+                                  >
+                                    Variante
+                                  </Typography>
+                                </Grid>
+
+                                <Grid
+                                  size={{
+                                    md: 2,
+                                  }}
+                                >
+                                  <Typography
+                                    variant="caption"
+                                    sx={{
+                                      fontWeight:
+                                        700,
+                                    }}
+                                  >
+                                    Stock actual
+                                  </Typography>
+                                </Grid>
+
+                                <Grid
+                                  size={{
+                                    md: 2,
+                                  }}
+                                >
+                                  <Typography
+                                    variant="caption"
+                                    sx={{
+                                      fontWeight:
+                                        700,
+                                    }}
+                                  >
+                                    Cantidad
+                                  </Typography>
+                                </Grid>
+
+                                <Grid
+                                  size={{
+                                    md: 2,
+                                  }}
+                                >
+                                  <Typography
+                                    variant="caption"
+                                    sx={{
+                                      fontWeight:
+                                        700,
+                                    }}
+                                  >
+                                    Costo unitario
+                                  </Typography>
+                                </Grid>
+
+                                <Grid
+                                  size={{
+                                    md: 2,
+                                  }}
+                                >
+                                  <Typography
+                                    variant="caption"
+                                    sx={{
+                                      fontWeight:
+                                        700,
+                                    }}
+                                  >
+                                    Subtotal
+                                  </Typography>
+                                </Grid>
+                              </Grid>
+
+                              {/* FILAS */}
+
+                              {item.variantes.map(
+                                (
+                                  variante,
+                                ) => {
+                                  const cantidad =
+                                    Number(
+                                      variante.cantidad ??
+                                        0,
+                                    );
+
+                                  const costo =
+                                    Number(
+                                      variante.precio_costo ??
+                                        0,
+                                    );
+
+                                  return (
+                                    <Paper
+                                      key={
+                                        variante.id
+                                      }
+                                      variant="outlined"
+                                      sx={{
+                                        p: 1.25,
+
+                                        borderRadius:
+                                          2,
+                                      }}
+                                    >
+                                      <Grid
+                                        container
+                                        spacing={1.5}
+                                        sx={{
+                                          alignItems:
+                                            "center",
+                                        }}
+                                      >
+                                        {/* VARIANTE */}
+
+                                        <Grid
+                                          size={{
+                                            xs:
+                                              12,
+
+                                            md:
+                                              4,
+                                          }}
+                                        >
+                                          <Typography
+                                            sx={{
+                                              fontWeight:
+                                                600,
+                                            }}
+                                          >
+                                            {variante.color ||
+                                              "Sin color"}{" "}
+                                            /{" "}
+                                            {variante.talle ||
+                                              "Sin talle"}
+                                          </Typography>
+
+                                          {variante.codigo_barras && (
+                                            <Typography
+                                              variant="caption"
+                                              color="text.secondary"
+                                            >
+                                              Código:{" "}
+                                              {
+                                                variante.codigo_barras
+                                              }
+                                            </Typography>
+                                          )}
+                                        </Grid>
+
+                                        {/* STOCK */}
+
+                                        <Grid
+                                          size={{
+                                            xs:
+                                              12,
+
+                                            sm:
+                                              4,
+
+                                            md:
+                                              2,
+                                          }}
+                                        >
+                                          <Typography
+                                            variant="body2"
+                                            color="text.secondary"
+                                          >
+                                            Stock actual
+                                          </Typography>
+
+                                          <Typography
+                                            sx={{
+                                              fontWeight:
+                                                700,
+                                            }}
+                                          >
+                                            {Number(
+                                              variante.stock_actual ??
+                                                0,
+                                            )}
+                                          </Typography>
+                                        </Grid>
+
+                                        {/* CANTIDAD */}
+
+                                        <Grid
+                                          size={{
+                                            xs:
+                                              12,
+
+                                            sm:
+                                              4,
+
+                                            md:
+                                              2,
+                                          }}
+                                        >
+                                          <TextField
+                                            fullWidth
+                                            size="small"
+                                            type="number"
+                                            label="Cantidad"
+                                            value={
+                                              variante.cantidad
+                                            }
+                                            onChange={(
+                                              event,
+                                            ) =>
+                                              modificarVariante(
+                                                item.idTemporal,
+
+                                                variante.id,
+
+                                                {
+                                                  cantidad:
+                                                    event
+                                                      .target
+                                                      .value,
+                                                },
+                                              )
+                                            }
+                                            disabled={
+                                              loading
+                                            }
+                                            slotProps={{
+                                              htmlInput:
+                                                {
+                                                  min:
+                                                    0,
+
+                                                  step:
+                                                    1,
+                                                },
+                                            }}
+                                          />
+                                        </Grid>
+
+                                        {/* COSTO */}
+
+                                        <Grid
+                                          size={{
+                                            xs:
+                                              12,
+
+                                            sm:
+                                              4,
+
+                                            md:
+                                              2,
+                                          }}
+                                        >
+                                          <TextField
+                                            fullWidth
+                                            size="small"
+                                            type="number"
+                                            label="Costo"
+                                            value={
+                                              variante.precio_costo
+                                            }
+                                            onChange={(
+                                              event,
+                                            ) =>
+                                              modificarVariante(
+                                                item.idTemporal,
+
+                                                variante.id,
+
+                                                {
+                                                  precio_costo:
+                                                    event
+                                                      .target
+                                                      .value,
+                                                },
+                                              )
+                                            }
+                                            disabled={
+                                              loading
+                                            }
+                                            slotProps={{
+                                              htmlInput:
+                                                {
+                                                  min:
+                                                    0,
+
+                                                  step:
+                                                    "0.01",
+                                                },
+                                            }}
+                                          />
+                                        </Grid>
+
+                                        {/* SUBTOTAL */}
+
+                                        <Grid
+                                          size={{
+                                            xs:
+                                              12,
+
+                                            md:
+                                              2,
+                                          }}
+                                        >
+                                          <Typography
+                                            variant="body2"
+                                            color="text.secondary"
+                                          >
+                                            Subtotal
+                                          </Typography>
+
+                                          <Typography
+                                            sx={{
+                                              fontWeight:
+                                                700,
+                                            }}
+                                          >
+                                            {formatearMoneda(
+                                              cantidad *
+                                                costo,
+                                            )}
+                                          </Typography>
+                                        </Grid>
+                                      </Grid>
+                                    </Paper>
+                                  );
+                                },
+                              )}
+
+                              {/* SUBTOTAL PRODUCTO */}
+
+                              <Stack
+                                direction="row"
+                                sx={{
+                                  pt: 1,
+
+                                  justifyContent:
+                                    "flex-end",
+                                }}
+                              >
+                                <Typography
+                                  sx={{
+                                    fontWeight:
+                                      700,
+                                  }}
+                                >
+                                  Subtotal producto:{" "}
+                                  {formatearMoneda(
+                                    subtotalProducto,
+                                  )}
+                                </Typography>
+                              </Stack>
+                            </Stack>
+                          )}
+                      </>
+                    )}
                   </Paper>
                 );
               },
@@ -2497,7 +2825,7 @@ export default function IngresoFormDialog({
           </Stack>
 
           {/* ======================= */}
-          {/* TOTAL */}
+          {/* TOTAL GENERAL */}
           {/* ======================= */}
 
           <Stack
@@ -2521,7 +2849,7 @@ export default function IngresoFormDialog({
                     "100%",
 
                   sm:
-                    280,
+                    300,
                 },
 
                 borderRadius:
@@ -2554,7 +2882,7 @@ export default function IngresoFormDialog({
         </DialogContent>
 
         {/* ======================= */}
-        {/* BOTONES */}
+        {/* ACCIONES */}
         {/* ======================= */}
 
         <DialogActions
