@@ -137,3 +137,65 @@ export async function registrarUsuario(
 
   return extraerDatos(data);
 }
+
+export async function registrarEmpresa(
+  datos,
+) {
+  const payload = {
+    empresa: {
+      nombre:
+        datos.empresa?.nombre
+          ?.trim() ?? "",
+
+      cuit:
+        datos.empresa?.cuit
+          ?.trim() ?? "",
+
+      email:
+        datos.empresa?.email
+          ?.trim()
+          .toLowerCase() ?? "",
+
+      telefono:
+        datos.empresa?.telefono
+          ?.trim() ?? "",
+
+      plan:
+        datos.empresa?.plan ??
+        "BASICO",
+    },
+
+    administrador: {
+      nombre:
+        datos.administrador?.nombre
+          ?.trim() ?? "",
+
+      apellido:
+        datos.administrador?.apellido
+          ?.trim() ?? "",
+
+      usuario:
+        datos.administrador?.usuario
+          ?.trim() ?? "",
+
+      email:
+        datos.administrador?.email
+          ?.trim()
+          .toLowerCase() ?? "",
+
+      password:
+        datos.administrador?.password ??
+        "",
+    },
+  };
+
+  const { data } =
+    await api.post(
+      "/empresas",
+      payload,
+    );
+
+  return extraerDatos(
+    data,
+  );
+}

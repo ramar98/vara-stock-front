@@ -66,3 +66,24 @@ export async function actualizarConfiguracion(
 
   return extraerDatos(data);
 }
+
+export async function actualizarLogo(
+  logoData,
+) {
+  const { data } = await api.put(
+    "/configuracion/logo",
+    {
+      logo_data: logoData,
+    },
+  );
+
+  return extraerDatos(data);
+}
+
+export async function eliminarLogo() {
+  const { data } = await api.delete(
+    "/configuracion/logo",
+  );
+
+  return extraerDatos(data);
+}

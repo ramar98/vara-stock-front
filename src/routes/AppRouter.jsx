@@ -6,6 +6,8 @@ import {
 
 import LoginPage from "../features/auth/pages/LoginPage";
 
+import RegistroEmpresaPage from "../features/auth/pages/RegistroEmpresaPage";
+
 import ProtectedRoute from "../features/auth/components/ProtectedRoute";
 import RoleRoute from "../features/auth/components/RoleRoute";
 
@@ -37,12 +39,19 @@ export default function AppRouter() {
   return (
     <Routes>
       {/* ========================= */}
-      {/* RUTA PÚBLICA */}
+      {/* RUTAS PÚBLICAS */}
       {/* ========================= */}
 
       <Route
         path="/login"
         element={<LoginPage />}
+      />
+
+      <Route
+        path="/registro"
+        element={
+          <RegistroEmpresaPage />
+        }
       />
 
       {/* ========================= */}

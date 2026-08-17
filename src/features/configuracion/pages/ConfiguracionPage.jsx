@@ -1,4 +1,7 @@
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
 
 import {
   Alert,
@@ -20,6 +23,8 @@ import BusinessIcon from "@mui/icons-material/Business";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import SaveIcon from "@mui/icons-material/Save";
 import SettingsIcon from "@mui/icons-material/Settings";
+import ImageIcon from "@mui/icons-material/Image";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 import useConfiguracion from "../hooks/useConfiguracion";
 
@@ -31,7 +36,8 @@ const estadoInicial = {
   direccion: "",
   moneda: "ARS",
   porcentaje_iva: "21",
-  stock_minimo_predeterminado: "1",
+  stock_minimo_predeterminado:
+    "1",
   encabezado_comprobante: "",
   pie_comprobante: "",
 };
@@ -39,11 +45,13 @@ const estadoInicial = {
 const MONEDAS = [
   {
     value: "ARS",
-    label: "Peso argentino (ARS)",
+    label:
+      "Peso argentino (ARS)",
   },
   {
     value: "USD",
-    label: "Dólar estadounidense (USD)",
+    label:
+      "Dólar estadounidense (USD)",
   },
   {
     value: "EUR",
@@ -66,12 +74,23 @@ export default function ConfiguracionPage() {
     configuracion,
     cargandoConfiguracion,
     errorConfiguracion,
+
     guardarConfiguracion,
     guardandoConfiguracion,
+
+    guardarLogo,
+    guardandoLogo,
+
+    borrarLogo,
+    eliminandoLogo,
   } = useConfiguracion();
 
-  const [formulario, setFormulario] =
-    useState(estadoInicial);
+  const [
+    formulario,
+    setFormulario,
+  ] = useState(
+    estadoInicial,
+  );
 
   const [
     erroresFormulario,
@@ -83,12 +102,30 @@ export default function ConfiguracionPage() {
     setErroresServidor,
   ] = useState([]);
 
-  const [notificacion, setNotificacion] =
-    useState({
-      open: false,
-      message: "",
-      severity: "success",
-    });
+  const [
+    notificacion,
+    setNotificacion,
+  ] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
+
+  const [
+    logoSeleccionado,
+    setLogoSeleccionado,
+  ] = useState(null);
+
+  const [
+    vistaPreviaLogo,
+    setVistaPreviaLogo,
+  ] = useState("");
+
+  /*
+   * =====================================
+   * CARGAR CONFIGURACIÓN
+   * =====================================
+   */
 
   useEffect(() => {
     if (!configuracion) {
@@ -97,140 +134,234 @@ export default function ConfiguracionPage() {
 
     setFormulario({
       nombre_negocio:
-        configuracion.nombre_negocio ?? "",
+        configuracion
+          .nombre_negocio ??
+        "",
 
       eslogan:
-        configuracion.eslogan ?? "",
+        configuracion
+          .eslogan ??
+        "",
 
       telefono:
-        configuracion.telefono ?? "",
+        configuracion
+          .telefono ??
+        "",
 
       email:
-        configuracion.email ?? "",
+        configuracion
+          .email ??
+        "",
 
       direccion:
-        configuracion.direccion ?? "",
+        configuracion
+          .direccion ??
+        "",
 
       moneda:
-        configuracion.moneda ?? "ARS",
+        configuracion
+          .moneda ??
+        "ARS",
 
       porcentaje_iva:
         String(
-          configuracion.porcentaje_iva ??
+          configuracion
+            .porcentaje_iva ??
             21,
         ),
 
       stock_minimo_predeterminado:
         String(
-          configuracion.stock_minimo_predeterminado ??
+          configuracion
+            .stock_minimo_predeterminado ??
             1,
         ),
 
       encabezado_comprobante:
-        configuracion.encabezado_comprobante ??
+        configuracion
+          .encabezado_comprobante ??
         "",
 
       pie_comprobante:
-        configuracion.pie_comprobante ??
+        configuracion
+          .pie_comprobante ??
         "",
     });
   }, [configuracion]);
 
-  const cambiarCampo = (event) => {
-    const { name, value } =
-      event.target;
+  /*
+   * =====================================
+   * CAMBIAR CAMPOS
+   * =====================================
+   */
 
-    setFormulario((estadoActual) => ({
-      ...estadoActual,
-      [name]: value,
-    }));
+  const cambiarCampo = (
+    event,
+  ) => {
+    const {
+      name,
+      value,
+    } = event.target;
 
-    if (erroresFormulario[name]) {
+    setFormulario(
+      (estadoActual) => ({
+        ...estadoActual,
+
+        [name]:
+          value,
+      }),
+    );
+
+    if (
+      erroresFormulario[
+        name
+      ]
+    ) {
       setErroresFormulario(
         (estadoActual) => ({
           ...estadoActual,
-          [name]: "",
+
+          [name]:
+            "",
         }),
       );
     }
 
-    if (erroresServidor.length > 0) {
-      setErroresServidor([]);
+    if (
+      erroresServidor
+        .length > 0
+    ) {
+      setErroresServidor(
+        [],
+      );
     }
   };
+
+  /*
+   * =====================================
+   * VALIDAR CONFIGURACIÓN
+   * =====================================
+   */
 
   const validar = () => {
     const nuevosErrores = {};
 
     const nombreNegocio =
-      formulario.nombre_negocio.trim();
+      formulario
+        .nombre_negocio
+        .trim();
 
     const eslogan =
-      formulario.eslogan.trim();
+      formulario
+        .eslogan
+        .trim();
 
     const telefono =
-      formulario.telefono.trim();
+      formulario
+        .telefono
+        .trim();
 
     const email =
-      formulario.email.trim();
+      formulario
+        .email
+        .trim();
 
     const direccion =
-      formulario.direccion.trim();
+      formulario
+        .direccion
+        .trim();
 
-    const porcentajeIva = Number(
-      formulario.porcentaje_iva,
-    );
+    const porcentajeIva =
+      Number(
+        formulario
+          .porcentaje_iva,
+      );
 
-    const stockMinimo = Number(
-      formulario.stock_minimo_predeterminado,
-    );
+    const stockMinimo =
+      Number(
+        formulario
+          .stock_minimo_predeterminado,
+      );
 
     const encabezado =
-      formulario.encabezado_comprobante.trim();
+      formulario
+        .encabezado_comprobante
+        .trim();
 
     const pie =
-      formulario.pie_comprobante.trim();
+      formulario
+        .pie_comprobante
+        .trim();
 
     if (!nombreNegocio) {
-      nuevosErrores.nombre_negocio =
+      nuevosErrores
+        .nombre_negocio =
         "El nombre del negocio es obligatorio.";
     } else if (
-      nombreNegocio.length > 150
+      nombreNegocio.length >
+      150
     ) {
-      nuevosErrores.nombre_negocio =
+      nuevosErrores
+        .nombre_negocio =
         "El nombre no puede superar los 150 caracteres.";
     }
 
-    if (eslogan.length > 250) {
-      nuevosErrores.eslogan =
+    if (
+      eslogan.length >
+      250
+    ) {
+      nuevosErrores
+        .eslogan =
         "El eslogan no puede superar los 250 caracteres.";
     }
 
-    if (telefono.length > 50) {
-      nuevosErrores.telefono =
+    if (
+      telefono.length >
+      50
+    ) {
+      nuevosErrores
+        .telefono =
         "El teléfono no puede superar los 50 caracteres.";
     }
 
-    if (!validarEmail(email)) {
-      nuevosErrores.email =
+    if (
+      !validarEmail(
+        email,
+      )
+    ) {
+      nuevosErrores
+        .email =
         "Ingresá un correo electrónico válido.";
-    } else if (email.length > 150) {
-      nuevosErrores.email =
+    } else if (
+      email.length >
+      150
+    ) {
+      nuevosErrores
+        .email =
         "El correo no puede superar los 150 caracteres.";
     }
 
-    if (direccion.length > 250) {
-      nuevosErrores.direccion =
+    if (
+      direccion.length >
+      250
+    ) {
+      nuevosErrores
+        .direccion =
         "La dirección no puede superar los 250 caracteres.";
     }
 
     if (
-      formulario.porcentaje_iva === "" ||
-      Number.isNaN(porcentajeIva) ||
+      formulario
+        .porcentaje_iva ===
+        "" ||
+      Number.isNaN(
+        porcentajeIva,
+      ) ||
       porcentajeIva < 0 ||
       porcentajeIva > 100
     ) {
-      nuevosErrores.porcentaje_iva =
+      nuevosErrores
+        .porcentaje_iva =
         "El IVA debe estar entre 0 y 100.";
     }
 
@@ -238,20 +369,31 @@ export default function ConfiguracionPage() {
       formulario
         .stock_minimo_predeterminado ===
         "" ||
-      !Number.isInteger(stockMinimo) ||
+      !Number.isInteger(
+        stockMinimo,
+      ) ||
       stockMinimo < 0
     ) {
-      nuevosErrores.stock_minimo_predeterminado =
+      nuevosErrores
+        .stock_minimo_predeterminado =
         "El stock mínimo debe ser un entero mayor o igual a cero.";
     }
 
-    if (encabezado.length > 250) {
-      nuevosErrores.encabezado_comprobante =
+    if (
+      encabezado.length >
+      250
+    ) {
+      nuevosErrores
+        .encabezado_comprobante =
         "El encabezado no puede superar los 250 caracteres.";
     }
 
-    if (pie.length > 500) {
-      nuevosErrores.pie_comprobante =
+    if (
+      pie.length >
+      500
+    ) {
+      nuevosErrores
+        .pie_comprobante =
         "El pie no puede superar los 500 caracteres.";
     }
 
@@ -260,13 +402,22 @@ export default function ConfiguracionPage() {
     );
 
     return (
-      Object.keys(nuevosErrores)
-        .length === 0
+      Object.keys(
+        nuevosErrores,
+      ).length === 0
     );
   };
 
+  /*
+   * =====================================
+   * GUARDAR CONFIGURACIÓN
+   * =====================================
+   */
+
   const guardar = async () => {
-    setErroresServidor([]);
+    setErroresServidor(
+      [],
+    );
 
     if (!validar()) {
       return;
@@ -275,37 +426,49 @@ export default function ConfiguracionPage() {
     const resultado =
       await guardarConfiguracion({
         nombre_negocio:
-          formulario.nombre_negocio,
+          formulario
+            .nombre_negocio,
 
         eslogan:
-          formulario.eslogan,
+          formulario
+            .eslogan,
 
         telefono:
-          formulario.telefono,
+          formulario
+            .telefono,
 
         email:
-          formulario.email,
+          formulario
+            .email,
 
         direccion:
-          formulario.direccion,
+          formulario
+            .direccion,
 
         moneda:
-          formulario.moneda,
+          formulario
+            .moneda,
 
         porcentaje_iva:
-          formulario.porcentaje_iva,
+          formulario
+            .porcentaje_iva,
 
         stock_minimo_predeterminado:
-          formulario.stock_minimo_predeterminado,
+          formulario
+            .stock_minimo_predeterminado,
 
         encabezado_comprobante:
-          formulario.encabezado_comprobante,
+          formulario
+            .encabezado_comprobante,
 
         pie_comprobante:
-          formulario.pie_comprobante,
+          formulario
+            .pie_comprobante,
       });
 
-    if (!resultado.success) {
+    if (
+      !resultado.success
+    ) {
       setErroresServidor(
         resultado.errors ?? [
           resultado.message,
@@ -314,9 +477,12 @@ export default function ConfiguracionPage() {
 
       setNotificacion({
         open: true,
+
         message:
           resultado.message,
-        severity: "error",
+
+        severity:
+          "error",
       });
 
       return;
@@ -324,29 +490,215 @@ export default function ConfiguracionPage() {
 
     setNotificacion({
       open: true,
+
       message:
         resultado.message,
-      severity: "success",
+
+      severity:
+        "success",
     });
   };
 
-  const cerrarNotificacion = () => {
-    setNotificacion(
-      (estadoActual) => ({
-        ...estadoActual,
-        open: false,
-      }),
+  /*
+   * =====================================
+   * SELECCIONAR LOGO
+   * =====================================
+   */
+
+  const seleccionarLogo = (
+    event,
+  ) => {
+    const archivo =
+      event.target
+        .files?.[0];
+
+    if (!archivo) {
+      return;
+    }
+
+    const tiposPermitidos = [
+      "image/png",
+      "image/jpeg",
+      "image/webp",
+    ];
+
+    if (
+      !tiposPermitidos.includes(
+        archivo.type,
+      )
+    ) {
+      setNotificacion({
+        open: true,
+
+        message:
+          "Seleccioná una imagen PNG, JPG o WEBP.",
+
+        severity:
+          "error",
+      });
+
+      event.target.value =
+        "";
+
+      return;
+    }
+
+    if (
+      archivo.size >
+      500 * 1024
+    ) {
+      setNotificacion({
+        open: true,
+
+        message:
+          "El logo no puede superar los 500 KB.",
+
+        severity:
+          "error",
+      });
+
+      event.target.value =
+        "";
+
+      return;
+    }
+
+    const reader =
+      new FileReader();
+
+    reader.onload = () => {
+      setLogoSeleccionado(
+        reader.result,
+      );
+
+      setVistaPreviaLogo(
+        reader.result,
+      );
+    };
+
+    reader.readAsDataURL(
+      archivo,
     );
   };
 
-  if (cargandoConfiguracion) {
+  /*
+   * =====================================
+   * GUARDAR LOGO
+   * =====================================
+   */
+
+  const guardarLogoSeleccionado =
+    async () => {
+      if (
+        !logoSeleccionado
+      ) {
+        return;
+      }
+
+      const resultado =
+        await guardarLogo(
+          logoSeleccionado,
+        );
+
+      setNotificacion({
+        open: true,
+
+        message:
+          resultado.message,
+
+        severity:
+          resultado.success
+            ? "success"
+            : "error",
+      });
+
+      if (
+        resultado.success
+      ) {
+        setLogoSeleccionado(
+          null,
+        );
+
+        setVistaPreviaLogo(
+          "",
+        );
+      }
+    };
+
+  /*
+   * =====================================
+   * ELIMINAR LOGO
+   * =====================================
+   */
+
+  const eliminarLogoActual =
+    async () => {
+      const resultado =
+        await borrarLogo();
+
+      setNotificacion({
+        open: true,
+
+        message:
+          resultado.message,
+
+        severity:
+          resultado.success
+            ? "success"
+            : "error",
+      });
+
+      if (
+        resultado.success
+      ) {
+        setLogoSeleccionado(
+          null,
+        );
+
+        setVistaPreviaLogo(
+          "",
+        );
+      }
+    };
+
+  /*
+   * =====================================
+   * CERRAR NOTIFICACIÓN
+   * =====================================
+   */
+
+  const cerrarNotificacion =
+    () => {
+      setNotificacion(
+        (estadoActual) => ({
+          ...estadoActual,
+
+          open: false,
+        }),
+      );
+    };
+
+  /*
+   * =====================================
+   * CARGANDO
+   * =====================================
+   */
+
+  if (
+    cargandoConfiguracion
+  ) {
     return (
       <Box
         sx={{
           minHeight: 400,
+
           display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
+
+          justifyContent:
+            "center",
+
+          alignItems:
+            "center",
         }}
       >
         <CircularProgress />
@@ -356,6 +708,10 @@ export default function ConfiguracionPage() {
 
   return (
     <Box>
+      {/* ====================== */}
+      {/* ENCABEZADO */}
+      {/* ====================== */}
+
       <Stack
         direction={{
           xs: "column",
@@ -367,13 +723,16 @@ export default function ConfiguracionPage() {
           sm: "center",
         }}
         spacing={2}
-        sx={{ mb: 3 }}
+        sx={{
+          mb: 3,
+        }}
       >
         <Box>
           <Typography
             variant="h4"
             sx={{
-              fontWeight: 700,
+              fontWeight:
+                700,
             }}
           >
             Configuración
@@ -382,7 +741,9 @@ export default function ConfiguracionPage() {
           <Typography
             variant="body2"
             color="text.secondary"
-            sx={{ mt: 0.5 }}
+            sx={{
+              mt: 0.5,
+            }}
           >
             Administrá la información general del negocio y sus parámetros.
           </Typography>
@@ -411,27 +772,44 @@ export default function ConfiguracionPage() {
         </Button>
       </Stack>
 
+      {/* ====================== */}
+      {/* ERRORES */}
+      {/* ====================== */}
+
       {errorConfiguracion && (
         <Alert
           severity="error"
-          sx={{ mb: 3 }}
+          sx={{
+            mb: 3,
+          }}
         >
-          {errorConfiguracion?.response
-            ?.data?.message ||
-            errorConfiguracion?.response
-              ?.data?.error ||
-            errorConfiguracion?.message ||
+          {errorConfiguracion
+            ?.response
+            ?.data
+            ?.message ||
+            errorConfiguracion
+              ?.response
+              ?.data
+              ?.error ||
+            errorConfiguracion
+              ?.message ||
             "No se pudo cargar la configuración."}
         </Alert>
       )}
 
-      {erroresServidor.length > 0 && (
+      {erroresServidor.length >
+        0 && (
         <Alert
           severity="error"
-          sx={{ mb: 3 }}
+          sx={{
+            mb: 3,
+          }}
         >
           {erroresServidor.map(
-            (mensaje, indice) => (
+            (
+              mensaje,
+              indice,
+            ) => (
               <Typography
                 key={`${mensaje}-${indice}`}
                 variant="body2"
@@ -447,6 +825,10 @@ export default function ConfiguracionPage() {
         container
         spacing={3}
       >
+        {/* ====================== */}
+        {/* DATOS NEGOCIO */}
+        {/* ====================== */}
+
         <Grid
           size={{
             xs: 12,
@@ -466,19 +848,30 @@ export default function ConfiguracionPage() {
                 direction="row"
                 spacing={1.5}
                 alignItems="center"
-                sx={{ mb: 3 }}
+                sx={{
+                  mb: 3,
+                }}
               >
                 <Box
                   sx={{
                     width: 42,
                     height: 42,
-                    borderRadius: 2,
+
+                    borderRadius:
+                      2,
+
                     backgroundColor:
                       "#F1EDE7",
-                    display: "flex",
+
+                    display:
+                      "flex",
+
                     justifyContent:
                       "center",
-                    alignItems: "center",
+
+                    alignItems:
+                      "center",
+
                     color:
                       "primary.main",
                   }}
@@ -490,7 +883,8 @@ export default function ConfiguracionPage() {
                   <Typography
                     variant="h6"
                     sx={{
-                      fontWeight: 700,
+                      fontWeight:
+                        700,
                     }}
                   >
                     Datos del negocio
@@ -500,7 +894,7 @@ export default function ConfiguracionPage() {
                     variant="body2"
                     color="text.secondary"
                   >
-                    Información principal de Vara Modas.
+                    Información principal de tu negocio.
                   </Typography>
                 </Box>
               </Stack>
@@ -509,47 +903,62 @@ export default function ConfiguracionPage() {
                 container
                 spacing={2}
               >
-                <Grid size={12}>
+                <Grid
+                  size={12}
+                >
                   <TextField
                     fullWidth
                     required
                     label="Nombre del negocio"
                     name="nombre_negocio"
                     value={
-                      formulario.nombre_negocio
+                      formulario
+                        .nombre_negocio
                     }
-                    onChange={cambiarCampo}
+                    onChange={
+                      cambiarCampo
+                    }
                     error={Boolean(
-                      erroresFormulario.nombre_negocio,
+                      erroresFormulario
+                        .nombre_negocio,
                     )}
                     helperText={
-                      erroresFormulario.nombre_negocio
+                      erroresFormulario
+                        .nombre_negocio
                     }
                     disabled={
                       guardandoConfiguracion
                     }
                     slotProps={{
                       htmlInput: {
-                        maxLength: 150,
+                        maxLength:
+                          150,
                       },
                     }}
                   />
                 </Grid>
 
-                <Grid size={12}>
+                <Grid
+                  size={12}
+                >
                   <TextField
                     fullWidth
                     label="Eslogan"
                     name="eslogan"
                     value={
-                      formulario.eslogan
+                      formulario
+                        .eslogan
                     }
-                    onChange={cambiarCampo}
+                    onChange={
+                      cambiarCampo
+                    }
                     error={Boolean(
-                      erroresFormulario.eslogan,
+                      erroresFormulario
+                        .eslogan,
                     )}
                     helperText={
-                      erroresFormulario.eslogan ||
+                      erroresFormulario
+                        .eslogan ||
                       `${formulario.eslogan.length}/250`
                     }
                     disabled={
@@ -557,7 +966,8 @@ export default function ConfiguracionPage() {
                     }
                     slotProps={{
                       htmlInput: {
-                        maxLength: 250,
+                        maxLength:
+                          250,
                       },
                     }}
                   />
@@ -574,21 +984,27 @@ export default function ConfiguracionPage() {
                     label="Teléfono"
                     name="telefono"
                     value={
-                      formulario.telefono
+                      formulario
+                        .telefono
                     }
-                    onChange={cambiarCampo}
+                    onChange={
+                      cambiarCampo
+                    }
                     error={Boolean(
-                      erroresFormulario.telefono,
+                      erroresFormulario
+                        .telefono,
                     )}
                     helperText={
-                      erroresFormulario.telefono
+                      erroresFormulario
+                        .telefono
                     }
                     disabled={
                       guardandoConfiguracion
                     }
                     slotProps={{
                       htmlInput: {
-                        maxLength: 50,
+                        maxLength:
+                          50,
                       },
                     }}
                   />
@@ -606,47 +1022,61 @@ export default function ConfiguracionPage() {
                     label="Correo electrónico"
                     name="email"
                     value={
-                      formulario.email
+                      formulario
+                        .email
                     }
-                    onChange={cambiarCampo}
+                    onChange={
+                      cambiarCampo
+                    }
                     error={Boolean(
-                      erroresFormulario.email,
+                      erroresFormulario
+                        .email,
                     )}
                     helperText={
-                      erroresFormulario.email
+                      erroresFormulario
+                        .email
                     }
                     disabled={
                       guardandoConfiguracion
                     }
                     slotProps={{
                       htmlInput: {
-                        maxLength: 150,
+                        maxLength:
+                          150,
                       },
                     }}
                   />
                 </Grid>
 
-                <Grid size={12}>
+                <Grid
+                  size={12}
+                >
                   <TextField
                     fullWidth
                     label="Dirección"
                     name="direccion"
                     value={
-                      formulario.direccion
+                      formulario
+                        .direccion
                     }
-                    onChange={cambiarCampo}
+                    onChange={
+                      cambiarCampo
+                    }
                     error={Boolean(
-                      erroresFormulario.direccion,
+                      erroresFormulario
+                        .direccion,
                     )}
                     helperText={
-                      erroresFormulario.direccion
+                      erroresFormulario
+                        .direccion
                     }
                     disabled={
                       guardandoConfiguracion
                     }
                     slotProps={{
                       htmlInput: {
-                        maxLength: 250,
+                        maxLength:
+                          250,
                       },
                     }}
                   />
@@ -656,6 +1086,10 @@ export default function ConfiguracionPage() {
           </Card>
         </Grid>
 
+        {/* ====================== */}
+        {/* PARÁMETROS */}
+        {/* ====================== */}
+
         <Grid
           size={{
             xs: 12,
@@ -664,7 +1098,8 @@ export default function ConfiguracionPage() {
         >
           <Card
             sx={{
-              height: "100%",
+              height:
+                "100%",
             }}
           >
             <CardContent
@@ -679,19 +1114,30 @@ export default function ConfiguracionPage() {
                 direction="row"
                 spacing={1.5}
                 alignItems="center"
-                sx={{ mb: 3 }}
+                sx={{
+                  mb: 3,
+                }}
               >
                 <Box
                   sx={{
                     width: 42,
                     height: 42,
-                    borderRadius: 2,
+
+                    borderRadius:
+                      2,
+
                     backgroundColor:
                       "#F1EDE7",
-                    display: "flex",
+
+                    display:
+                      "flex",
+
                     justifyContent:
                       "center",
-                    alignItems: "center",
+
+                    alignItems:
+                      "center",
+
                     color:
                       "primary.main",
                   }}
@@ -703,7 +1149,8 @@ export default function ConfiguracionPage() {
                   <Typography
                     variant="h6"
                     sx={{
-                      fontWeight: 700,
+                      fontWeight:
+                        700,
                     }}
                   >
                     Parámetros generales
@@ -718,16 +1165,21 @@ export default function ConfiguracionPage() {
                 </Box>
               </Stack>
 
-              <Stack spacing={2}>
+              <Stack
+                spacing={2}
+              >
                 <TextField
                   select
                   fullWidth
                   label="Moneda"
                   name="moneda"
                   value={
-                    formulario.moneda
+                    formulario
+                      .moneda
                   }
-                  onChange={cambiarCampo}
+                  onChange={
+                    cambiarCampo
+                  }
                   disabled={
                     guardandoConfiguracion
                   }
@@ -735,12 +1187,16 @@ export default function ConfiguracionPage() {
                   {MONEDAS.map(
                     (moneda) => (
                       <MenuItem
-                        key={moneda.value}
+                        key={
+                          moneda.value
+                        }
                         value={
                           moneda.value
                         }
                       >
-                        {moneda.label}
+                        {
+                          moneda.label
+                        }
                       </MenuItem>
                     ),
                   )}
@@ -752,14 +1208,19 @@ export default function ConfiguracionPage() {
                   label="Porcentaje de IVA"
                   name="porcentaje_iva"
                   value={
-                    formulario.porcentaje_iva
+                    formulario
+                      .porcentaje_iva
                   }
-                  onChange={cambiarCampo}
+                  onChange={
+                    cambiarCampo
+                  }
                   error={Boolean(
-                    erroresFormulario.porcentaje_iva,
+                    erroresFormulario
+                      .porcentaje_iva,
                   )}
                   helperText={
-                    erroresFormulario.porcentaje_iva ||
+                    erroresFormulario
+                      .porcentaje_iva ||
                     "Ingresá un valor entre 0 y 100."
                   }
                   disabled={
@@ -780,14 +1241,19 @@ export default function ConfiguracionPage() {
                   label="Stock mínimo predeterminado"
                   name="stock_minimo_predeterminado"
                   value={
-                    formulario.stock_minimo_predeterminado
+                    formulario
+                      .stock_minimo_predeterminado
                   }
-                  onChange={cambiarCampo}
+                  onChange={
+                    cambiarCampo
+                  }
                   error={Boolean(
-                    erroresFormulario.stock_minimo_predeterminado,
+                    erroresFormulario
+                      .stock_minimo_predeterminado,
                   )}
                   helperText={
-                    erroresFormulario.stock_minimo_predeterminado ||
+                    erroresFormulario
+                      .stock_minimo_predeterminado ||
                     "Se aplicará por defecto al crear nuevas variantes."
                   }
                   disabled={
@@ -805,7 +1271,13 @@ export default function ConfiguracionPage() {
           </Card>
         </Grid>
 
-        <Grid size={12}>
+        {/* ====================== */}
+        {/* LOGO */}
+        {/* ====================== */}
+
+        <Grid
+          size={12}
+        >
           <Card>
             <CardContent
               sx={{
@@ -819,19 +1291,300 @@ export default function ConfiguracionPage() {
                 direction="row"
                 spacing={1.5}
                 alignItems="center"
-                sx={{ mb: 3 }}
+                sx={{
+                  mb: 3,
+                }}
               >
                 <Box
                   sx={{
                     width: 42,
                     height: 42,
-                    borderRadius: 2,
+
+                    borderRadius:
+                      2,
+
                     backgroundColor:
                       "#F1EDE7",
-                    display: "flex",
+
+                    display:
+                      "flex",
+
                     justifyContent:
                       "center",
-                    alignItems: "center",
+
+                    alignItems:
+                      "center",
+
+                    color:
+                      "primary.main",
+                  }}
+                >
+                  <ImageIcon />
+                </Box>
+
+                <Box>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontWeight:
+                        700,
+                    }}
+                  >
+                    Logo del negocio
+                  </Typography>
+
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                  >
+                    El logo se mostrará en el menú lateral.
+                  </Typography>
+                </Box>
+              </Stack>
+
+              <Divider
+                sx={{
+                  mb: 3,
+                }}
+              />
+
+              <Box
+                sx={{
+                  display:
+                    "flex",
+
+                  flexDirection: {
+                    xs: "column",
+                    md: "row",
+                  },
+
+                  alignItems: {
+                    xs: "stretch",
+                    md: "center",
+                  },
+
+                  gap: 3,
+                }}
+              >
+                <Box
+                  sx={{
+                    width: {
+                      xs: "100%",
+                      md: 240,
+                    },
+
+                    height:
+                      160,
+
+                    border:
+                      "1px solid",
+
+                    borderColor:
+                      "divider",
+
+                    borderRadius:
+                      2,
+
+                    display:
+                      "flex",
+
+                    alignItems:
+                      "center",
+
+                    justifyContent:
+                      "center",
+
+                    backgroundColor:
+                      "#FAF8F5",
+
+                    overflow:
+                      "hidden",
+                  }}
+                >
+                  {vistaPreviaLogo ||
+                  configuracion?.logo_data ? (
+                    <Box
+                      component="img"
+                      src={
+                        vistaPreviaLogo ||
+                        configuracion
+                          ?.logo_data
+                      }
+                      alt="Logo del negocio"
+                      sx={{
+                        width:
+                          "100%",
+
+                        height:
+                          "100%",
+
+                        objectFit:
+                          "contain",
+
+                        p: 1,
+                      }}
+                    />
+                  ) : (
+                    <Stack
+                      alignItems="center"
+                      spacing={1}
+                      color="text.secondary"
+                    >
+                      <ImageIcon />
+
+                      <Typography
+                        variant="body2"
+                      >
+                        Sin logo
+                      </Typography>
+                    </Stack>
+                  )}
+                </Box>
+
+                <Stack
+                  spacing={1.5}
+                  sx={{
+                    flex: 1,
+
+                    maxWidth:
+                      360,
+                  }}
+                >
+                  <Button
+                    component="label"
+                    variant="outlined"
+                    disabled={
+                      guardandoLogo ||
+                      eliminandoLogo
+                    }
+                  >
+                    Seleccionar imagen
+
+                    <input
+                      hidden
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      onChange={
+                        seleccionarLogo
+                      }
+                    />
+                  </Button>
+
+                  <Button
+                    variant="contained"
+                    startIcon={
+                      guardandoLogo ? (
+                        <CircularProgress
+                          size={17}
+                          color="inherit"
+                        />
+                      ) : (
+                        <SaveIcon />
+                      )
+                    }
+                    onClick={
+                      guardarLogoSeleccionado
+                    }
+                    disabled={
+                      !logoSeleccionado ||
+                      guardandoLogo ||
+                      eliminandoLogo
+                    }
+                  >
+                    {guardandoLogo
+                      ? "Guardando logo..."
+                      : "Guardar logo"}
+                  </Button>
+
+                  {configuracion?.logo_data && (
+                    <Button
+                      color="error"
+                      variant="outlined"
+                      startIcon={
+                        eliminandoLogo ? (
+                          <CircularProgress
+                            size={
+                              17
+                            }
+                            color="inherit"
+                          />
+                        ) : (
+                          <DeleteIcon />
+                        )
+                      }
+                      onClick={
+                        eliminarLogoActual
+                      }
+                      disabled={
+                        guardandoLogo ||
+                        eliminandoLogo
+                      }
+                    >
+                      {eliminandoLogo
+                        ? "Eliminando..."
+                        : "Eliminar logo"}
+                    </Button>
+                  )}
+
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                  >
+                    Formatos permitidos:
+                    PNG, JPG y WEBP.
+                    Tamaño máximo:
+                    500 KB.
+                  </Typography>
+                </Stack>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* ====================== */}
+        {/* COMPROBANTES */}
+        {/* ====================== */}
+
+        <Grid
+          size={12}
+        >
+          <Card>
+            <CardContent
+              sx={{
+                p: {
+                  xs: 2.5,
+                  md: 3,
+                },
+              }}
+            >
+              <Stack
+                direction="row"
+                spacing={1.5}
+                alignItems="center"
+                sx={{
+                  mb: 3,
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 42,
+                    height: 42,
+
+                    borderRadius:
+                      2,
+
+                    backgroundColor:
+                      "#F1EDE7",
+
+                    display:
+                      "flex",
+
+                    justifyContent:
+                      "center",
+
+                    alignItems:
+                      "center",
+
                     color:
                       "primary.main",
                   }}
@@ -843,7 +1596,8 @@ export default function ConfiguracionPage() {
                   <Typography
                     variant="h6"
                     sx={{
-                      fontWeight: 700,
+                      fontWeight:
+                        700,
                     }}
                   >
                     Datos de comprobantes
@@ -858,7 +1612,11 @@ export default function ConfiguracionPage() {
                 </Box>
               </Stack>
 
-              <Divider sx={{ mb: 3 }} />
+              <Divider
+                sx={{
+                  mb: 3,
+                }}
+              />
 
               <Grid
                 container
@@ -877,14 +1635,19 @@ export default function ConfiguracionPage() {
                     label="Encabezado del comprobante"
                     name="encabezado_comprobante"
                     value={
-                      formulario.encabezado_comprobante
+                      formulario
+                        .encabezado_comprobante
                     }
-                    onChange={cambiarCampo}
+                    onChange={
+                      cambiarCampo
+                    }
                     error={Boolean(
-                      erroresFormulario.encabezado_comprobante,
+                      erroresFormulario
+                        .encabezado_comprobante,
                     )}
                     helperText={
-                      erroresFormulario.encabezado_comprobante ||
+                      erroresFormulario
+                        .encabezado_comprobante ||
                       `${formulario.encabezado_comprobante.length}/250`
                     }
                     disabled={
@@ -892,7 +1655,8 @@ export default function ConfiguracionPage() {
                     }
                     slotProps={{
                       htmlInput: {
-                        maxLength: 250,
+                        maxLength:
+                          250,
                       },
                     }}
                   />
@@ -911,14 +1675,19 @@ export default function ConfiguracionPage() {
                     label="Pie del comprobante"
                     name="pie_comprobante"
                     value={
-                      formulario.pie_comprobante
+                      formulario
+                        .pie_comprobante
                     }
-                    onChange={cambiarCampo}
+                    onChange={
+                      cambiarCampo
+                    }
                     error={Boolean(
-                      erroresFormulario.pie_comprobante,
+                      erroresFormulario
+                        .pie_comprobante,
                     )}
                     helperText={
-                      erroresFormulario.pie_comprobante ||
+                      erroresFormulario
+                        .pie_comprobante ||
                       `${formulario.pie_comprobante.length}/500`
                     }
                     disabled={
@@ -926,7 +1695,8 @@ export default function ConfiguracionPage() {
                     }
                     slotProps={{
                       htmlInput: {
-                        maxLength: 500,
+                        maxLength:
+                          500,
                       },
                     }}
                   />
@@ -937,25 +1707,42 @@ export default function ConfiguracionPage() {
         </Grid>
       </Grid>
 
+      {/* ====================== */}
+      {/* NOTIFICACIÓN */}
+      {/* ====================== */}
+
       <Snackbar
-        open={notificacion.open}
-        autoHideDuration={4000}
-        onClose={cerrarNotificacion}
+        open={
+          notificacion.open
+        }
+        autoHideDuration={
+          4000
+        }
+        onClose={
+          cerrarNotificacion
+        }
         anchorOrigin={{
-          vertical: "bottom",
-          horizontal: "right",
+          vertical:
+            "bottom",
+
+          horizontal:
+            "right",
         }}
       >
         <Alert
           severity={
-            notificacion.severity
+            notificacion
+              .severity
           }
           variant="filled"
           onClose={
             cerrarNotificacion
           }
         >
-          {notificacion.message}
+          {
+            notificacion
+              .message
+          }
         </Alert>
       </Snackbar>
     </Box>

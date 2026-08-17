@@ -7,6 +7,7 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  Skeleton,
   Stack,
   Tooltip,
   Typography,
@@ -14,6 +15,7 @@ import {
 
 import {
   BarChart,
+  Business,
   Category,
   Dashboard,
   Inventory2,
@@ -32,15 +34,23 @@ import {
   useNavigate,
 } from "react-router-dom";
 
-import { useAuth } from "../../features/auth/context/AuthContext";
+import {
+  useAuth,
+} from "../../features/auth/context/AuthContext";
 
-import logoVara from "../../assets/logo-vara.png";
+import useConfiguracion from "../../features/configuracion/hooks/useConfiguracion";
 
 const menu = [
   {
-    text: "Dashboard",
-    icon: <Dashboard />,
-    path: "/dashboard",
+    text:
+      "Dashboard",
+
+    icon:
+      <Dashboard />,
+
+    path:
+      "/dashboard",
+
     roles: [
       "ADMINISTRADOR",
       "VENDEDOR",
@@ -48,9 +58,15 @@ const menu = [
   },
 
   {
-    text: "Productos",
-    icon: <Inventory2 />,
-    path: "/productos",
+    text:
+      "Productos",
+
+    icon:
+      <Inventory2 />,
+
+    path:
+      "/productos",
+
     roles: [
       "ADMINISTRADOR",
       "VENDEDOR",
@@ -58,37 +74,30 @@ const menu = [
   },
 
   {
-    text: "Compras",
-    icon: <ShoppingCart />,
-    path: "/compras",
+    text:
+      "Compras",
+
+    icon:
+      <ShoppingCart />,
+
+    path:
+      "/compras",
+
     roles: [
       "ADMINISTRADOR",
     ],
   },
 
   {
-    text: "Ventas",
-    icon: <PointOfSale />,
-    path: "/ventas",
-    roles: [
-      "ADMINISTRADOR",
-      "VENDEDOR",
-    ],
-  },
+    text:
+      "Ventas",
 
-  {
-    text: "Proveedores",
-    icon: <LocalShipping />,
-    path: "/proveedores",
-    roles: [
-      "ADMINISTRADOR",
-    ],
-  },
+    icon:
+      <PointOfSale />,
 
-  {
-    text: "Clientes",
-    icon: <People />,
-    path: "/clientes",
+    path:
+      "/ventas",
+
     roles: [
       "ADMINISTRADOR",
       "VENDEDOR",
@@ -96,57 +105,126 @@ const menu = [
   },
 
   {
-    text: "Ajustes de stock",
-    icon: <Tune />,
-    path: "/ajustes-stock",
+    text:
+      "Proveedores",
+
+    icon:
+      <LocalShipping />,
+
+    path:
+      "/proveedores",
+
     roles: [
       "ADMINISTRADOR",
     ],
   },
 
   {
-    text: "Reportes",
-    icon: <BarChart />,
-    path: "/reportes",
+    text:
+      "Clientes",
+
+    icon:
+      <People />,
+
+    path:
+      "/clientes",
+
+    roles: [
+      "ADMINISTRADOR",
+      "VENDEDOR",
+    ],
+  },
+
+  {
+    text:
+      "Ajustes de stock",
+
+    icon:
+      <Tune />,
+
+    path:
+      "/ajustes-stock",
+
     roles: [
       "ADMINISTRADOR",
     ],
   },
 
   {
-    text: "Catálogos",
-    icon: <Category />,
-    path: "/catalogos",
+    text:
+      "Reportes",
+
+    icon:
+      <BarChart />,
+
+    path:
+      "/reportes",
+
     roles: [
       "ADMINISTRADOR",
     ],
   },
 
   {
-    text: "Usuarios",
-    icon: <ManageAccounts />,
-    path: "/usuarios",
+    text:
+      "Catálogos",
+
+    icon:
+      <Category />,
+
+    path:
+      "/catalogos",
+
     roles: [
       "ADMINISTRADOR",
     ],
   },
 
   {
-    text: "Configuración",
-    icon: <Settings />,
-    path: "/configuracion",
+    text:
+      "Usuarios",
+
+    icon:
+      <ManageAccounts />,
+
+    path:
+      "/usuarios",
+
+    roles: [
+      "ADMINISTRADOR",
+    ],
+  },
+
+  {
+    text:
+      "Configuración",
+
+    icon:
+      <Settings />,
+
+    path:
+      "/configuracion",
+
     roles: [
       "ADMINISTRADOR",
     ],
   },
 ];
 
-function obtenerIniciales(usuario) {
+function obtenerIniciales(
+  usuario,
+) {
   const nombre =
-    usuario?.nombre?.trim() ?? "";
+    usuario
+      ?.nombre
+      ?.trim() ??
+    "";
 
   const apellido =
-    usuario?.apellido?.trim() ?? "";
+    usuario
+      ?.apellido
+      ?.trim() ??
+    "";
 
   const inicialNombre =
     nombre.charAt(0);
@@ -155,12 +233,18 @@ function obtenerIniciales(usuario) {
     apellido.charAt(0);
 
   const iniciales =
-    `${inicialNombre}${inicialApellido}`.toUpperCase();
+    `${inicialNombre}${inicialApellido}`
+      .toUpperCase();
 
-  return iniciales || "U";
+  return (
+    iniciales ||
+    "U"
+  );
 }
 
-function obtenerNombreCompleto(usuario) {
+function obtenerNombreCompleto(
+  usuario,
+) {
   const nombreCompleto = [
     usuario?.nombre,
     usuario?.apellido,
@@ -176,7 +260,9 @@ function obtenerNombreCompleto(usuario) {
   );
 }
 
-function normalizarRol(rol) {
+function normalizarRol(
+  rol,
+) {
   return String(
     rol ?? "",
   )
@@ -184,133 +270,367 @@ function normalizarRol(rol) {
     .toUpperCase();
 }
 
+function obtenerNombreNegocio({
+  configuracion,
+  usuario,
+}) {
+  const nombreConfiguracion =
+    configuracion
+      ?.nombre_negocio
+      ?.trim();
+
+  if (
+    nombreConfiguracion
+  ) {
+    return nombreConfiguracion;
+  }
+
+  const nombreEmpresa =
+    usuario
+      ?.empresa
+      ?.trim();
+
+  if (
+    nombreEmpresa
+  ) {
+    return nombreEmpresa;
+  }
+
+  return "Mi negocio";
+}
+
+function obtenerInicialNegocio(
+  nombre,
+) {
+  const texto =
+    String(
+      nombre ??
+        "",
+    ).trim();
+
+  if (!texto) {
+    return "N";
+  }
+
+  return texto
+    .charAt(0)
+    .toUpperCase();
+}
+
 export default function Sidebar({
   drawerWidth,
+  mobile = false,
+  open = false,
+  onClose,
 }) {
-  const navigate = useNavigate();
+  const navigate =
+    useNavigate();
 
   const {
     usuario,
     cerrarSesion,
   } = useAuth();
 
+  const {
+    configuracion,
+    cargandoConfiguracion,
+  } = useConfiguracion();
+
   const rolUsuario =
     normalizarRol(
       usuario?.rol,
     );
 
-  /*
-   * Solo mostramos las opciones
-   * permitidas para el rol actual.
-   */
-  const menuVisible =
-    menu.filter((item) =>
-      item.roles.includes(
-        rolUsuario,
-      ),
+  const nombreNegocio =
+    obtenerNombreNegocio({
+      configuracion,
+      usuario,
+    });
+
+  const inicialNegocio =
+    obtenerInicialNegocio(
+      nombreNegocio,
     );
+
+  const menuVisible =
+    menu.filter(
+      (item) =>
+        item.roles.includes(
+          rolUsuario,
+        ),
+    );
+
+  const cerrarSiMobile = () => {
+    if (
+      mobile &&
+      onClose
+    ) {
+      onClose();
+    }
+  };
 
   const salir = () => {
     cerrarSesion();
 
-    navigate("/login", {
-      replace: true,
-    });
+    cerrarSiMobile();
+
+    navigate(
+      "/login",
+      {
+        replace:
+          true,
+      },
+    );
   };
 
-  return (
-    <Drawer
-      variant="permanent"
-      sx={{
-        width: drawerWidth,
-        flexShrink: 0,
+  const contenidoSidebar = (
+    <>
+      {/* ====================== */}
+      {/* NEGOCIO */}
+      {/* ====================== */}
 
-        "& .MuiDrawer-paper": {
-          width: drawerWidth,
-          boxSizing:
-            "border-box",
-
-          borderRight:
-            "1px solid #E7E2DA",
-
-          backgroundColor:
-            "#FFFFFF",
-
-          color: "#111111",
-
-          display: "flex",
-
-          flexDirection:
-            "column",
-        },
-      }}
-    >
-      {/* LOGO */}
       <Box
         sx={{
-          px: 1,
-          pt: 0.8,
-          pb: 0.5,
+          px:
+            2,
 
-          height: 125,
+          py:
+            2,
 
-          display: "flex",
+          minHeight:
+            105,
+
+          display:
+            "flex",
 
           alignItems:
             "center",
-
-          justifyContent:
-            "center",
-
-          overflow:
-            "hidden",
 
           background:
             "linear-gradient(180deg, #FFFFFF 0%, #FAF8F5 100%)",
         }}
       >
-        <Box
-          component="img"
-          src={logoVara}
-          alt="Vara Modas"
-          sx={{
-            width: "92%",
+        {cargandoConfiguracion ? (
+          <Stack
+            direction="row"
+            spacing={1.5}
+            alignItems="center"
+            sx={{
+              width:
+                "100%",
+            }}
+          >
+            <Skeleton
+              variant="rounded"
+              width={52}
+              height={52}
+            />
 
-            maxWidth: 245,
+            <Box
+              sx={{
+                flex:
+                  1,
+              }}
+            >
+              <Skeleton
+                width="75%"
+                height={26}
+              />
 
-            height: "auto",
+              <Skeleton
+                width="45%"
+                height={20}
+              />
+            </Box>
+          </Stack>
+        ) : (
+          <Stack
+            direction="row"
+            spacing={1.5}
+            alignItems="center"
+            sx={{
+              width:
+                "100%",
 
-            maxHeight: 115,
+              minWidth:
+                0,
+            }}
+          >
+            {configuracion
+              ?.logo_data ? (
+              <Box
+                sx={{
+                  width:
+                    58,
 
-            objectFit:
-              "contain",
+                  height:
+                    58,
 
-            display: "block",
-          }}
-        />
+                  flexShrink:
+                    0,
+
+                  display:
+                    "flex",
+
+                  alignItems:
+                    "center",
+
+                  justifyContent:
+                    "center",
+
+                  overflow:
+                    "hidden",
+
+                  borderRadius:
+                    2,
+
+                  border:
+                    "1px solid #E7E2DA",
+
+                  backgroundColor:
+                    "#FFFFFF",
+                }}
+              >
+                <Box
+                  component="img"
+                  src={
+                    configuracion
+                      .logo_data
+                  }
+                  alt={
+                    nombreNegocio
+                  }
+                  sx={{
+                    width:
+                      "100%",
+
+                    height:
+                      "100%",
+
+                    objectFit:
+                      "contain",
+
+                    p:
+                      0.5,
+                  }}
+                />
+              </Box>
+            ) : (
+              <Avatar
+                variant="rounded"
+                sx={{
+                  width:
+                    52,
+
+                  height:
+                    52,
+
+                  backgroundColor:
+                    "#171717",
+
+                  color:
+                    "#FFFFFF",
+
+                  fontWeight:
+                    800,
+
+                  fontSize:
+                    21,
+
+                  borderRadius:
+                    2,
+                }}
+              >
+                {
+                  inicialNegocio
+                }
+              </Avatar>
+            )}
+
+            <Box
+              sx={{
+                minWidth:
+                  0,
+
+                flex:
+                  1,
+              }}
+            >
+              <Typography
+                variant="subtitle1"
+                noWrap
+                sx={{
+                  fontWeight:
+                    800,
+
+                  color:
+                    "#111111",
+
+                  lineHeight:
+                    1.25,
+                }}
+              >
+                {
+                  nombreNegocio
+                }
+              </Typography>
+
+              <Stack
+                direction="row"
+                spacing={0.5}
+                alignItems="center"
+                sx={{
+                  mt:
+                    0.5,
+                }}
+              >
+                <Business
+                  sx={{
+                    fontSize:
+                      14,
+
+                    color:
+                      "text.secondary",
+                  }}
+                />
+
+                <Typography
+                  variant="caption"
+                  noWrap
+                  color="text.secondary"
+                >
+                  Sistema de gestión
+                </Typography>
+              </Stack>
+            </Box>
+          </Stack>
+        )}
       </Box>
 
-      <Divider
-        sx={{
-          borderColor:
-            "#E7E2DA",
-        }}
-      />
+      <Divider />
 
+      {/* ====================== */}
       {/* MENÚ */}
+      {/* ====================== */}
+
       <Box
         sx={{
-          flex: 1,
+          flex:
+            1,
 
-          px: 1.5,
+          px:
+            1.5,
 
-          py: 1.5,
+          py:
+            1.5,
 
           overflowY:
             "auto",
         }}
       >
-        <List disablePadding>
+        <List
+          disablePadding
+        >
           {menuVisible.map(
             (item) => (
               <ListItemButton
@@ -323,13 +643,18 @@ export default function Sidebar({
                 to={
                   item.path
                 }
+                onClick={
+                  cerrarSiMobile
+                }
                 sx={{
                   minHeight:
                     46,
 
-                  mb: 0.75,
+                  mb:
+                    0.75,
 
-                  px: 2,
+                  px:
+                    2,
 
                   borderRadius:
                     2,
@@ -347,9 +672,6 @@ export default function Sidebar({
 
                       color:
                         "#67615B",
-
-                      transition:
-                        "color 0.2s ease",
                     },
 
                   "&:hover":
@@ -362,12 +684,6 @@ export default function Sidebar({
 
                       transform:
                         "translateX(2px)",
-
-                      "& .MuiListItemIcon-root":
-                        {
-                          color:
-                            "#111111",
-                        },
                     },
 
                   "&.active":
@@ -406,13 +722,14 @@ export default function Sidebar({
                     item.text
                   }
                   slotProps={{
-                    primary: {
-                      fontSize:
-                        14,
+                    primary:
+                      {
+                        fontSize:
+                          14,
 
-                      fontWeight:
-                        600,
-                    },
+                        fontWeight:
+                          600,
+                      },
                   }}
                 />
               </ListItemButton>
@@ -421,17 +738,16 @@ export default function Sidebar({
         </List>
       </Box>
 
-      <Divider
-        sx={{
-          borderColor:
-            "#E7E2DA",
-        }}
-      />
+      <Divider />
 
+      {/* ====================== */}
       {/* USUARIO */}
+      {/* ====================== */}
+
       <Box
         sx={{
-          p: 1.5,
+          p:
+            1.5,
 
           backgroundColor:
             "#FCFAF7",
@@ -444,7 +760,8 @@ export default function Sidebar({
             alignItems:
               "center",
 
-            p: 1.25,
+            p:
+              1.25,
 
             borderRadius:
               2,
@@ -458,9 +775,11 @@ export default function Sidebar({
         >
           <Avatar
             sx={{
-              width: 38,
+              width:
+                38,
 
-              height: 38,
+              height:
+                38,
 
               backgroundColor:
                 "#171717",
@@ -468,7 +787,8 @@ export default function Sidebar({
               color:
                 "#FFFFFF",
 
-              fontSize: 13,
+              fontSize:
+                13,
 
               fontWeight:
                 700,
@@ -481,8 +801,11 @@ export default function Sidebar({
 
           <Box
             sx={{
-              flex: 1,
-              minWidth: 0,
+              flex:
+                1,
+
+              minWidth:
+                0,
             }}
           >
             <Typography
@@ -491,9 +814,6 @@ export default function Sidebar({
               sx={{
                 fontWeight:
                   700,
-
-                color:
-                  "text.primary",
               }}
             >
               {obtenerNombreCompleto(
@@ -505,10 +825,6 @@ export default function Sidebar({
               variant="caption"
               noWrap
               color="text.secondary"
-              sx={{
-                display:
-                  "block",
-              }}
             >
               {usuario?.rol ||
                 usuario?.usuario ||
@@ -516,19 +832,26 @@ export default function Sidebar({
             </Typography>
           </Box>
 
-          <Tooltip title="Cerrar sesión">
+          <Tooltip
+            title="Cerrar sesión"
+          >
             <ListItemButton
-              onClick={salir}
+              onClick={
+                salir
+              }
               aria-label="Cerrar sesión"
               sx={{
-                width: 38,
+                width:
+                  38,
 
-                height: 38,
+                height:
+                  38,
 
                 minWidth:
                   38,
 
-                p: 0,
+                p:
+                  0,
 
                 borderRadius:
                   2,
@@ -538,22 +861,74 @@ export default function Sidebar({
 
                 color:
                   "#716A63",
-
-                "&:hover":
-                  {
-                    backgroundColor:
-                      "#F1EDE7",
-
-                    color:
-                      "#A94A45",
-                  },
               }}
             >
-              <Logout fontSize="small" />
+              <Logout
+                fontSize="small"
+              />
             </ListItemButton>
           </Tooltip>
         </Stack>
       </Box>
+    </>
+  );
+
+  return (
+    <Drawer
+      variant={
+        mobile
+          ? "temporary"
+          : "permanent"
+      }
+      open={
+        mobile
+          ? open
+          : true
+      }
+      onClose={
+        onClose
+      }
+      ModalProps={{
+        keepMounted:
+          true,
+      }}
+      sx={{
+        width:
+          drawerWidth,
+
+        flexShrink:
+          mobile
+            ? 0
+            : 0,
+
+        "& .MuiDrawer-paper":
+          {
+            width:
+              drawerWidth,
+
+            boxSizing:
+              "border-box",
+
+            borderRight:
+              "1px solid #E7E2DA",
+
+            backgroundColor:
+              "#FFFFFF",
+
+            color:
+              "#111111",
+
+            display:
+              "flex",
+
+            flexDirection:
+              "column",
+          },
+      }}
+    >
+      {
+        contenidoSidebar
+      }
     </Drawer>
   );
 }
