@@ -1,4 +1,7 @@
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
 
 import {
   Alert,
@@ -23,9 +26,31 @@ const estadoInicial = {
   stock_minimo: "1",
 };
 
+function convertirPrecioInicial(
+  valor,
+) {
+  if (
+    valor === undefined ||
+    valor === null ||
+    valor === ""
+  ) {
+    return "";
+  }
+
+  return String(valor);
+}
+
 export default function VarianteDialog({
   open,
   variante,
+
+  /*
+   * Precios predeterminados
+   * provenientes del producto.
+   */
+  precioCostoDefault = "",
+  precioVentaDefault = "",
+
   colores = [],
   talles = [],
   loading = false,
@@ -48,21 +73,40 @@ export default function VarianteDialog({
   const editando =
     Boolean(variante?.id);
 
+  /*
+   * =====================================
+   * CARGAR FORMULARIO
+   * =====================================
+   */
+
   useEffect(() => {
     if (!open) {
       return;
     }
 
+    /*
+     * =================================
+     * EDITAR VARIANTE
+     * =================================
+     *
+     * Conservamos los precios propios
+     * de la variante.
+     */
+
     if (variante) {
       setFormulario({
         color_id:
           variante.color_id != null
-            ? String(variante.color_id)
+            ? String(
+                variante.color_id,
+              )
             : "",
 
         talle_id:
           variante.talle_id != null
-            ? String(variante.talle_id)
+            ? String(
+                variante.talle_id,
+              )
             : "",
 
         codigo_barras:
@@ -86,8 +130,28 @@ export default function VarianteDialog({
           "1",
       });
     } else {
+      /*
+       * =================================
+       * NUEVA VARIANTE
+       * =================================
+       *
+       * Los precios arrancan con
+       * los valores predeterminados
+       * del producto.
+       */
+
       setFormulario({
         ...estadoInicial,
+
+        precio_costo:
+          convertirPrecioInicial(
+            precioCostoDefault,
+          ),
+
+        precio_venta:
+          convertirPrecioInicial(
+            precioVentaDefault,
+          ),
       });
     }
 
@@ -95,7 +159,15 @@ export default function VarianteDialog({
   }, [
     open,
     variante,
+    precioCostoDefault,
+    precioVentaDefault,
   ]);
+
+  /*
+   * =====================================
+   * CAMBIAR CAMPO
+   * =====================================
+   */
 
   const cambiarCampo = (
     event,
@@ -108,7 +180,9 @@ export default function VarianteDialog({
     setFormulario(
       (estadoActual) => ({
         ...estadoActual,
-        [name]: value,
+
+        [name]:
+          value,
       }),
     );
 
@@ -116,11 +190,19 @@ export default function VarianteDialog({
       setErrores(
         (estadoActual) => ({
           ...estadoActual,
-          [name]: "",
+
+          [name]:
+            "",
         }),
       );
     }
   };
+
+  /*
+   * =====================================
+   * VALIDAR
+   * =====================================
+   */
 
   const validar = () => {
     const nuevosErrores =
@@ -160,6 +242,10 @@ export default function VarianteDialog({
         formulario.stock_minimo,
       );
 
+    /*
+     * Precio costo
+     */
+
     if (
       formulario.precio_costo ===
         "" ||
@@ -171,6 +257,10 @@ export default function VarianteDialog({
       nuevosErrores.precio_costo =
         "Ingresá un precio de costo válido.";
     }
+
+    /*
+     * Precio venta
+     */
 
     if (
       formulario.precio_venta ===
@@ -185,6 +275,29 @@ export default function VarianteDialog({
     }
 
     /*
+     * Evitamos precio de venta
+     * menor al costo.
+     */
+
+    if (
+      formulario.precio_costo !==
+        "" &&
+      formulario.precio_venta !==
+        "" &&
+      !Number.isNaN(
+        precioCosto,
+      ) &&
+      !Number.isNaN(
+        precioVenta,
+      ) &&
+      precioVenta <
+        precioCosto
+    ) {
+      nuevosErrores.precio_venta =
+        "El precio de venta no puede ser menor al precio de costo.";
+    }
+
+    /*
      * Stock actual solamente
      * se valida al crear.
      *
@@ -193,6 +306,7 @@ export default function VarianteDialog({
      * deben hacerse mediante
      * ingresos / ajustes.
      */
+
     if (
       !editando &&
       (
@@ -207,6 +321,10 @@ export default function VarianteDialog({
       nuevosErrores.stock_actual =
         "Ingresá un stock válido.";
     }
+
+    /*
+     * Stock mínimo
+     */
 
     if (
       formulario.stock_minimo ===
@@ -230,6 +348,12 @@ export default function VarianteDialog({
       ).length === 0
     );
   };
+
+  /*
+   * =====================================
+   * GUARDAR
+   * =====================================
+   */
 
   const guardar =
     async () => {
@@ -280,11 +404,23 @@ export default function VarianteDialog({
       );
     };
 
+  /*
+   * =====================================
+   * CERRAR
+   * =====================================
+   */
+
   const cerrar = () => {
     if (!loading) {
       onClose?.();
     }
   };
+
+  /*
+   * =====================================
+   * RENDER
+   * =====================================
+   */
 
   return (
     <Dialog
@@ -301,6 +437,7 @@ export default function VarianteDialog({
            * Evita que el modal
            * salga de la pantalla.
            */
+
           maxHeight:
             "90vh",
 
@@ -357,6 +494,7 @@ export default function VarianteDialog({
            * Solamente esta zona
            * hace scroll.
            */
+
           overflowY:
             "auto",
 
@@ -549,7 +687,12 @@ export default function VarianteDialog({
                 errores.precio_costo,
               )}
               helperText={
-                errores.precio_costo
+                errores.precio_costo ||
+                (
+                  !editando
+                    ? "Valor predeterminado del producto. Podés modificarlo para esta variante."
+                    : ""
+                )
               }
               disabled={
                 loading
@@ -557,6 +700,7 @@ export default function VarianteDialog({
               slotProps={{
                 htmlInput: {
                   min: 0,
+
                   step:
                     "0.01",
                 },
@@ -590,7 +734,12 @@ export default function VarianteDialog({
                 errores.precio_venta,
               )}
               helperText={
-                errores.precio_venta
+                errores.precio_venta ||
+                (
+                  !editando
+                    ? "Valor predeterminado del producto. Podés modificarlo para esta variante."
+                    : ""
+                )
               }
               disabled={
                 loading
@@ -598,6 +747,7 @@ export default function VarianteDialog({
               slotProps={{
                 htmlInput: {
                   min: 0,
+
                   step:
                     "0.01",
                 },
@@ -645,6 +795,7 @@ export default function VarianteDialog({
               slotProps={{
                 htmlInput: {
                   min: 0,
+
                   step: 1,
                 },
               }}

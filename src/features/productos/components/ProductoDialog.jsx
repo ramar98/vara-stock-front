@@ -1,4 +1,7 @@
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
 
 import {
   Alert,
@@ -12,6 +15,7 @@ import {
   Grid,
   MenuItem,
   TextField,
+  Typography,
 } from "@mui/material";
 
 const estadoInicial = {
@@ -21,6 +25,9 @@ const estadoInicial = {
   categoria_id: "",
   marca_id: "",
   proveedor_id: "",
+
+  precio_costo_default: "",
+  precio_venta_default: "",
 };
 
 export default function ProductoDialog({
@@ -50,6 +57,12 @@ export default function ProductoDialog({
     Boolean(
       producto?.id,
     );
+
+  /*
+   * =====================================
+   * CARGAR PRODUCTO / LIMPIAR FORMULARIO
+   * =====================================
+   */
 
   useEffect(() => {
     if (!open) {
@@ -81,6 +94,14 @@ export default function ProductoDialog({
         proveedor_id:
           producto.proveedor_id ??
           "",
+
+        precio_costo_default:
+          producto.precio_costo_default ??
+          "",
+
+        precio_venta_default:
+          producto.precio_venta_default ??
+          "",
       });
     } else {
       setFormulario({
@@ -94,6 +115,12 @@ export default function ProductoDialog({
     producto,
   ]);
 
+  /*
+   * =====================================
+   * CAMBIAR CAMPO
+   * =====================================
+   */
+
   const cambiarCampo = (
     event,
   ) => {
@@ -105,23 +132,39 @@ export default function ProductoDialog({
     setFormulario(
       (estadoActual) => ({
         ...estadoActual,
-        [name]: value,
+
+        [name]:
+          value,
       }),
     );
 
-    if (errores[name]) {
+    if (
+      errores[name]
+    ) {
       setErrores(
         (estadoActual) => ({
           ...estadoActual,
-          [name]: "",
+
+          [name]:
+            "",
         }),
       );
     }
   };
 
+  /*
+   * =====================================
+   * VALIDACIÓN
+   * =====================================
+   */
+
   const validar = () => {
     const nuevosErrores =
       {};
+
+    /*
+     * Código
+     */
 
     if (
       !formulario.codigo.trim()
@@ -130,11 +173,57 @@ export default function ProductoDialog({
         "El código es obligatorio.";
     }
 
+    /*
+     * Nombre
+     */
+
     if (
       !formulario.nombre.trim()
     ) {
       nuevosErrores.nombre =
         "El nombre es obligatorio.";
+    }
+
+    /*
+     * Precio costo
+     */
+
+    const precioCosto =
+      Number(
+        formulario.precio_costo_default,
+      );
+
+    if (
+      formulario.precio_costo_default ===
+        "" ||
+      Number.isNaN(
+        precioCosto,
+      ) ||
+      precioCosto < 0
+    ) {
+      nuevosErrores.precio_costo_default =
+        "Ingresá un precio de costo válido.";
+    }
+
+    /*
+     * Precio venta
+     */
+
+    const precioVenta =
+      Number(
+        formulario.precio_venta_default,
+      );
+
+    if (
+      formulario.precio_venta_default ===
+        "" ||
+      Number.isNaN(
+        precioVenta,
+      ) ||
+      precioVenta < 0
+    ) {
+      nuevosErrores.precio_venta_default =
+        "Ingresá un precio de venta válido.";
     }
 
     setErrores(
@@ -147,6 +236,12 @@ export default function ProductoDialog({
       ).length === 0
     );
   };
+
+  /*
+   * =====================================
+   * GUARDAR
+   * =====================================
+   */
 
   const guardar =
     async () => {
@@ -186,6 +281,20 @@ export default function ProductoDialog({
                 formulario.proveedor_id,
               )
             : null,
+
+        /*
+         * PRECIOS BASE DEL PRODUCTO
+         */
+
+        precio_costo_default:
+          Number(
+            formulario.precio_costo_default,
+          ),
+
+        precio_venta_default:
+          Number(
+            formulario.precio_venta_default,
+          ),
       };
 
       await onGuardar(
@@ -193,11 +302,23 @@ export default function ProductoDialog({
       );
     };
 
+  /*
+   * =====================================
+   * CERRAR
+   * =====================================
+   */
+
   const cerrar = () => {
     if (!loading) {
       onClose();
     }
   };
+
+  /*
+   * =====================================
+   * RENDER
+   * =====================================
+   */
 
   return (
     <Dialog
@@ -208,15 +329,20 @@ export default function ProductoDialog({
       PaperProps={{
         sx: {
           borderRadius: 3,
-          overflow: "hidden",
+
+          overflow:
+            "hidden",
         },
       }}
     >
       <DialogTitle
         sx={{
           px: 3,
+
           py: 2.5,
+
           fontWeight: 700,
+
           fontSize: 26,
         }}
       >
@@ -235,7 +361,8 @@ export default function ProductoDialog({
 
           py: 3,
 
-          overflowX: "hidden",
+          overflowX:
+            "hidden",
         }}
       >
         {error && (
@@ -496,6 +623,117 @@ export default function ProductoDialog({
                 )}
               </TextField>
             </Grid>
+
+            {/* ======================= */}
+            {/* PRECIOS BASE */}
+            {/* ======================= */}
+
+            <Grid
+              size={{
+                xs: 12,
+              }}
+            >
+              <Typography
+                variant="subtitle1"
+                sx={{
+                  mt: 1,
+                  fontWeight: 700,
+                }}
+              >
+                Precios predeterminados
+              </Typography>
+
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{
+                  mt: 0.5,
+                }}
+              >
+                Estos valores se utilizarán
+                automáticamente al crear
+                nuevas variantes del
+                producto.
+              </Typography>
+            </Grid>
+
+            {/* PRECIO COSTO */}
+
+            <Grid
+              size={{
+                xs: 12,
+                md: 6,
+              }}
+            >
+              <TextField
+                fullWidth
+                required
+                type="number"
+                label="Precio de costo"
+                name="precio_costo_default"
+                value={
+                  formulario.precio_costo_default
+                }
+                onChange={
+                  cambiarCampo
+                }
+                error={Boolean(
+                  errores.precio_costo_default,
+                )}
+                helperText={
+                  errores.precio_costo_default ||
+                  "Precio de costo predeterminado para nuevas variantes."
+                }
+                disabled={
+                  loading
+                }
+                slotProps={{
+                  htmlInput: {
+                    min: 0,
+                    step: "0.01",
+                  },
+                }}
+              />
+            </Grid>
+
+            {/* PRECIO VENTA */}
+
+            <Grid
+              size={{
+                xs: 12,
+                md: 6,
+              }}
+            >
+              <TextField
+                fullWidth
+                required
+                type="number"
+                label="Precio de venta"
+                name="precio_venta_default"
+                value={
+                  formulario.precio_venta_default
+                }
+                onChange={
+                  cambiarCampo
+                }
+                error={Boolean(
+                  errores.precio_venta_default,
+                )}
+                helperText={
+                  errores.precio_venta_default ||
+                  "Precio de venta predeterminado para nuevas variantes."
+                }
+                disabled={
+                  loading
+                }
+                slotProps={{
+                  htmlInput: {
+                    min: 0,
+                    step: "0.01",
+                  },
+                }}
+              />
+            </Grid>
           </Grid>
         </Box>
       </DialogContent>
@@ -503,7 +741,9 @@ export default function ProductoDialog({
       <DialogActions
         sx={{
           px: 3,
+
           py: 2.5,
+
           gap: 1,
         }}
       >

@@ -1,4 +1,6 @@
-import { useState } from "react";
+import {
+  useState,
+} from "react";
 
 import {
   Alert,
@@ -35,11 +37,17 @@ function formatearMoneda(valor) {
     "es-AR",
     {
       style: "currency",
-      currency: "ARS",
-      maximumFractionDigits: 2,
+
+      currency:
+        "ARS",
+
+      maximumFractionDigits:
+        2,
     },
   ).format(
-    Number(valor ?? 0),
+    Number(
+      valor ?? 0,
+    ),
   );
 }
 
@@ -92,19 +100,23 @@ export default function VariantesPanel({
    * Solo Administrador
    * ============================
    */
-  const abrirNuevaVariante = () => {
-    if (!esAdministrador) {
-      return;
-    }
 
-    setVarianteSeleccionada(
-      null,
-    );
+  const abrirNuevaVariante =
+    () => {
+      if (!esAdministrador) {
+        return;
+      }
 
-    setErrorFormulario("");
+      setVarianteSeleccionada(
+        null,
+      );
 
-    setDialogAbierto(true);
-  };
+      setErrorFormulario("");
+
+      setDialogAbierto(
+        true,
+      );
+    };
 
   /*
    * ============================
@@ -112,35 +124,44 @@ export default function VariantesPanel({
    * Solo Administrador
    * ============================
    */
-  const abrirEditarVariante = (
-    variante,
-  ) => {
-    if (!esAdministrador) {
-      return;
-    }
 
-    setVarianteSeleccionada(
+  const abrirEditarVariante =
+    (
       variante,
-    );
+    ) => {
+      if (!esAdministrador) {
+        return;
+      }
 
-    setErrorFormulario("");
+      setVarianteSeleccionada(
+        variante,
+      );
 
-    setDialogAbierto(true);
-  };
+      setErrorFormulario("");
 
-  const cerrarDialog = () => {
-    if (guardandoVariante) {
-      return;
-    }
+      setDialogAbierto(
+        true,
+      );
+    };
 
-    setDialogAbierto(false);
+  const cerrarDialog =
+    () => {
+      if (
+        guardandoVariante
+      ) {
+        return;
+      }
 
-    setVarianteSeleccionada(
-      null,
-    );
+      setDialogAbierto(
+        false,
+      );
 
-    setErrorFormulario("");
-  };
+      setVarianteSeleccionada(
+        null,
+      );
+
+      setErrorFormulario("");
+    };
 
   /*
    * ============================
@@ -148,36 +169,41 @@ export default function VariantesPanel({
    * Solo Administrador
    * ============================
    */
-  const guardar = async (
-    datos,
-  ) => {
-    if (!esAdministrador) {
-      return;
-    }
 
-    setErrorFormulario("");
+  const guardar =
+    async (
+      datos,
+    ) => {
+      if (!esAdministrador) {
+        return;
+      }
 
-    const resultado =
-      await guardarVariante({
-        varianteSeleccionada,
-        datos,
-      });
+      setErrorFormulario("");
 
-    if (!resultado.success) {
-      setErrorFormulario(
+      const resultado =
+        await guardarVariante({
+          varianteSeleccionada,
+
+          datos,
+        });
+
+      if (
+        !resultado.success
+      ) {
+        setErrorFormulario(
+          resultado.message,
+        );
+
+        return;
+      }
+
+      cerrarDialog();
+
+      onNotificar?.(
         resultado.message,
+        "success",
       );
-
-      return;
-    }
-
-    cerrarDialog();
-
-    onNotificar?.(
-      resultado.message,
-      "success",
-    );
-  };
+    };
 
   /*
    * ============================
@@ -185,6 +211,7 @@ export default function VariantesPanel({
    * Solo Administrador
    * ============================
    */
+
   const confirmarEliminacion =
     async () => {
       if (
@@ -199,7 +226,9 @@ export default function VariantesPanel({
           varianteAEliminar,
         );
 
-      if (!resultado.success) {
+      if (
+        !resultado.success
+      ) {
         onNotificar?.(
           resultado.message,
           "error",
@@ -218,6 +247,12 @@ export default function VariantesPanel({
       );
     };
 
+  /*
+   * ============================
+   * SIN PRODUCTO
+   * ============================
+   */
+
   if (!productoId) {
     return (
       <Alert severity="info">
@@ -235,15 +270,19 @@ export default function VariantesPanel({
       <Stack
         direction={{
           xs: "column",
+
           sm: "row",
         }}
         spacing={2}
         sx={{
           mb: 2,
+
           justifyContent:
             "space-between",
+
           alignItems: {
             xs: "stretch",
+
             sm: "center",
           },
         }}
@@ -252,7 +291,8 @@ export default function VariantesPanel({
           <Typography
             variant="h6"
             sx={{
-              fontWeight: 700,
+              fontWeight:
+                700,
             }}
           >
             Variantes
@@ -290,9 +330,12 @@ export default function VariantesPanel({
       {cargandoVariantes && (
         <Box
           sx={{
-            display: "flex",
+            display:
+              "flex",
+
             justifyContent:
               "center",
+
             py: 5,
           }}
         >
@@ -326,7 +369,8 @@ export default function VariantesPanel({
 
       {!cargandoVariantes &&
         !errorVariantes &&
-        variantes.length === 0 && (
+        variantes.length ===
+          0 && (
           <Alert severity="info">
             Este producto todavía no tiene variantes.
           </Alert>
@@ -338,45 +382,43 @@ export default function VariantesPanel({
 
       {!cargandoVariantes &&
         !errorVariantes &&
-        variantes.length > 0 && (
+        variantes.length >
+          0 && (
           <TableContainer
-            component={Paper}
+            component={
+              Paper
+            }
             variant="outlined"
           >
             <Table>
               <TableHead>
                 <TableRow>
-                  {/*
-                   * Primero mostramos
-                   * lo más importante.
-                   */}
+                  {/* PRECIO VENTA */}
 
                   <TableCell align="right">
                     Precio venta
                   </TableCell>
 
+                  {/* STOCK */}
+
                   <TableCell align="center">
                     Stock
                   </TableCell>
+
+                  {/* MÍNIMO */}
 
                   <TableCell align="center">
                     Mínimo
                   </TableCell>
 
-                  {/*
-                   * El costo es sensible.
-                   * Solo Administrador.
-                   */}
+                  {/* COSTO SOLO ADMIN */}
+
                   {esAdministrador && (
                     <TableCell align="right">
                       Costo
                     </TableCell>
                   )}
 
-                  {/*
-                   * Detalles de la variante
-                   * después de precios/stock.
-                   */}
                   <TableCell>
                     Color
                   </TableCell>
@@ -389,10 +431,8 @@ export default function VariantesPanel({
                     Código de barras
                   </TableCell>
 
-                  {/*
-                   * Acciones solamente
-                   * Administrador.
-                   */}
+                  {/* ACCIONES SOLO ADMIN */}
+
                   {esAdministrador && (
                     <TableCell align="center">
                       Acciones
@@ -403,7 +443,9 @@ export default function VariantesPanel({
 
               <TableBody>
                 {variantes.map(
-                  (variante) => {
+                  (
+                    variante,
+                  ) => {
                     const stock =
                       Number(
                         variante.stock_actual ??
@@ -424,7 +466,8 @@ export default function VariantesPanel({
                       "success";
 
                     if (
-                      stock <= 0
+                      stock <=
+                      0
                     ) {
                       colorStock =
                         "error";
@@ -463,7 +506,9 @@ export default function VariantesPanel({
                         <TableCell align="center">
                           <Chip
                             size="small"
-                            label={stock}
+                            label={
+                              stock
+                            }
                             color={
                               colorStock
                             }
@@ -565,20 +610,53 @@ export default function VariantesPanel({
           open={
             dialogAbierto
           }
+
           variante={
             varianteSeleccionada
           }
-          colores={colores}
-          talles={talles}
+
+          /*
+           * =========================
+           * PRECIOS DEL PRODUCTO
+           * =========================
+           *
+           * Se utilizan solamente
+           * cuando estamos creando
+           * una variante nueva.
+           */
+
+          precioCostoDefault={
+            producto
+              ?.precio_costo_default ??
+            ""
+          }
+
+          precioVentaDefault={
+            producto
+              ?.precio_venta_default ??
+            ""
+          }
+
+          colores={
+            colores
+          }
+
+          talles={
+            talles
+          }
+
           loading={
             guardandoVariante
           }
+
           error={
             errorFormulario
           }
+
           onClose={
             cerrarDialog
           }
+
           onGuardar={
             guardar
           }
