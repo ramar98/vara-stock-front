@@ -83,6 +83,10 @@ function crearItemVacio() {
     variantes: [],
 
     cargandoVariantes: false,
+
+    usa_variantes: true,
+
+    error_variante: "",
   };
 }
 
@@ -154,6 +158,17 @@ function extraerDatos(respuesta) {
   }
 
   return [];
+}
+
+function productoUsaVariantes(
+  producto,
+) {
+  return (
+    Number(
+      producto?.usa_variantes ??
+        1,
+    ) === 1
+  );
 }
 
 function obtenerUrlImagen(ruta) {
@@ -786,6 +801,12 @@ export default function IngresoFormDialog({
 
           cargandoVariantes:
             false,
+
+          usa_variantes:
+            true,
+
+          error_variante:
+            "",
         },
       );
     };
@@ -841,6 +862,11 @@ export default function IngresoFormDialog({
             ),
         );
 
+      const usaVariantes =
+        productoUsaVariantes(
+          productoSeleccionado,
+        );
+
       modificarItem(
         item.idTemporal,
         {
@@ -861,6 +887,12 @@ export default function IngresoFormDialog({
             Boolean(
               productoId,
             ),
+
+          usa_variantes:
+            usaVariantes,
+
+          error_variante:
+            "",
         },
       );
 
@@ -874,6 +906,74 @@ export default function IngresoFormDialog({
             productoId,
           );
 
+        /*
+         * Producto simple:
+         *
+         * El backend ya creó una única
+         * variante interna. La mantenemos
+         * dentro de item.variantes para que
+         * el ingreso siga enviando
+         * variante_id al backend.
+         */
+        if (!usaVariantes) {
+          const varianteInterna =
+            variantes[0];
+
+          if (!varianteInterna) {
+            modificarItem(
+              item.idTemporal,
+              {
+                variantes: [],
+
+                cargandoVariantes:
+                  false,
+
+                usa_variantes:
+                  false,
+
+                error_variante:
+                  "No se encontró la variante interna del producto.",
+              },
+            );
+
+            return;
+          }
+
+          modificarItem(
+            item.idTemporal,
+            {
+              variantes: [
+                {
+                  ...varianteInterna,
+
+                  cantidad:
+                    varianteInterna.cantidad ??
+                    "0",
+
+                  precio_costo:
+                    String(
+                      varianteInterna.precio_costo ??
+                        productoSeleccionado
+                          ?.precio_costo_default ??
+                        "",
+                    ),
+                },
+              ],
+
+              cargandoVariantes:
+                false,
+
+              usa_variantes:
+                false,
+
+              error_variante:
+                "",
+            },
+          );
+
+          return;
+        }
+
         modificarItem(
           item.idTemporal,
           {
@@ -881,6 +981,12 @@ export default function IngresoFormDialog({
 
             cargandoVariantes:
               false,
+
+            usa_variantes:
+              true,
+
+            error_variante:
+              "",
           },
         );
       } catch {
@@ -891,6 +997,12 @@ export default function IngresoFormDialog({
 
             cargandoVariantes:
               false,
+
+            usa_variantes:
+              usaVariantes,
+
+            error_variante:
+              "No se pudo cargar la información de stock del producto.",
           },
         );
       }
@@ -1070,19 +1182,189 @@ export default function IngresoFormDialog({
         ],
       );
 
-      setProductoNuevo(
-        productoCompleto,
-      );
-
       setDialogProductoAbierto(
         false,
       );
 
       /*
-       * Al crear producto nuevo,
-       * pedimos crear la primera
-       * variante.
+       * PRODUCTO SIN VARIANTES
+       *
+       * El backend ya creó su variante
+       * interna. No abrimos VarianteDialog.
        */
+      if (
+        !productoUsaVariantes(
+          productoCompleto,
+        )
+      ) {
+        try {
+          const variantes =
+            await cargarVariantesProducto(
+              productoCompleto.id,
+            );
+
+          const varianteInterna =
+            variantes[0];
+
+          if (!varianteInterna) {
+            setItems(
+              (
+                estadoActual,
+              ) =>
+                estadoActual.map(
+                  (item) =>
+                    item.idTemporal ===
+                    itemCreacionId
+                      ? {
+                          ...item,
+
+                          categoria_id:
+                            productoCompleto.categoria_id
+                              ? String(
+                                  productoCompleto.categoria_id,
+                                )
+                              : "",
+
+                          producto_id:
+                            String(
+                              productoCompleto.id,
+                            ),
+
+                          variantes:
+                            [],
+
+                          cargandoVariantes:
+                            false,
+
+                          usa_variantes:
+                            false,
+
+                          error_variante:
+                            "No se encontró la variante interna del producto.",
+                        }
+                      : item,
+                ),
+            );
+          } else {
+            setItems(
+              (
+                estadoActual,
+              ) =>
+                estadoActual.map(
+                  (item) =>
+                    item.idTemporal ===
+                    itemCreacionId
+                      ? {
+                          ...item,
+
+                          categoria_id:
+                            productoCompleto.categoria_id
+                              ? String(
+                                  productoCompleto.categoria_id,
+                                )
+                              : "",
+
+                          producto_id:
+                            String(
+                              productoCompleto.id,
+                            ),
+
+                          variantes: [
+                            {
+                              ...varianteInterna,
+
+                              cantidad:
+                                "0",
+
+                              precio_costo:
+                                String(
+                                  varianteInterna.precio_costo ??
+                                    productoCompleto.precio_costo_default ??
+                                    "",
+                                ),
+                            },
+                          ],
+
+                          cargandoVariantes:
+                            false,
+
+                          usa_variantes:
+                            false,
+
+                          error_variante:
+                            "",
+                        }
+                      : item,
+                ),
+            );
+          }
+        } catch {
+          setItems(
+            (
+              estadoActual,
+            ) =>
+              estadoActual.map(
+                (item) =>
+                  item.idTemporal ===
+                  itemCreacionId
+                    ? {
+                        ...item,
+
+                        categoria_id:
+                          productoCompleto.categoria_id
+                            ? String(
+                                productoCompleto.categoria_id,
+                              )
+                            : "",
+
+                        producto_id:
+                          String(
+                            productoCompleto.id,
+                          ),
+
+                        variantes:
+                          [],
+
+                        cargandoVariantes:
+                          false,
+
+                        usa_variantes:
+                          false,
+
+                        error_variante:
+                          "No se pudo cargar la información del producto simple.",
+                      }
+                    : item,
+              ),
+          );
+        }
+
+        setProductoNuevo(
+          null,
+        );
+
+        setItemCreacionId(
+          null,
+        );
+
+        setDialogVarianteAbierto(
+          false,
+        );
+
+        return;
+      }
+
+      /*
+       * PRODUCTO CON VARIANTES
+       *
+       * Conservamos el flujo actual:
+       * después de crear el producto
+       * pedimos crear su primera variante.
+       */
+
+      setProductoNuevo(
+        productoCompleto,
+      );
 
       setDialogVarianteAbierto(
         true,
@@ -1101,6 +1383,26 @@ export default function IngresoFormDialog({
         obtenerProductoSeleccionado(
           item,
         );
+
+      if (
+        productoSeleccionado &&
+        !productoUsaVariantes(
+          productoSeleccionado,
+        )
+      ) {
+        setErroresFormulario(
+          (
+            estadoActual,
+          ) => ({
+            ...estadoActual,
+
+            productos:
+              "Este producto no utiliza variantes.",
+          }),
+        );
+
+        return;
+      }
 
       if (
         !productoSeleccionado?.id
@@ -1550,7 +1852,7 @@ export default function IngresoFormDialog({
       0
     ) {
       nuevosErrores.productos =
-        "Ingresá una cantidad mayor que cero en al menos una variante.";
+        "Ingresá una cantidad mayor que cero en al menos un producto o variante.";
     }
 
     setErroresFormulario(
@@ -1962,6 +2264,11 @@ export default function IngresoFormDialog({
                     item,
                   );
 
+                const usaVariantes =
+                  productoUsaVariantes(
+                    productoSeleccionado,
+                  );
+
                 const subtotalProducto =
                   obtenerSubtotalProducto(
                     item,
@@ -2290,6 +2597,23 @@ export default function IngresoFormDialog({
                                 {productoSeleccionado.categoria ||
                                   "Sin categoría"}
                               </Typography>
+
+                              {!usaVariantes && (
+                                <Typography
+                                  variant="caption"
+                                  sx={{
+                                    display:
+                                      "block",
+
+                                    mt: 0.25,
+
+                                    fontWeight:
+                                      600,
+                                  }}
+                                >
+                                  Producto sin variantes
+                                </Typography>
+                              )}
                             </Box>
                           </Paper>
                         ) : (
@@ -2329,7 +2653,7 @@ export default function IngresoFormDialog({
                       </Grid>
                     </Grid>
 
-                    {/* VARIANTES */}
+                    {/* VARIANTES / PRODUCTO SIMPLE */}
 
                     {item.producto_id && (
                       <>
@@ -2371,36 +2695,55 @@ export default function IngresoFormDialog({
                                   700,
                               }}
                             >
-                              Variantes
+                              {usaVariantes
+                                ? "Variantes"
+                                : "Producto sin variantes"}
                             </Typography>
 
                             <Typography
                               variant="caption"
                               color="text.secondary"
                             >
-                              Colocá 0 en las variantes que no llegaron.
+                              {usaVariantes
+                                ? "Colocá 0 en las variantes que no llegaron."
+                                : "Ingresá la cantidad recibida y el costo unitario del producto."}
                             </Typography>
                           </Box>
 
-                          <Button
-                            size="small"
-                            variant="outlined"
-                            startIcon={
-                              <AddIcon />
-                            }
-                            onClick={() =>
-                              abrirCrearVarianteExistente(
-                                item,
-                              )
-                            }
-                            disabled={
-                              loading ||
-                              item.cargandoVariantes
-                            }
-                          >
-                            Nueva variante
-                          </Button>
+                          {usaVariantes && (
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              startIcon={
+                                <AddIcon />
+                              }
+                              onClick={() =>
+                                abrirCrearVarianteExistente(
+                                  item,
+                                )
+                              }
+                              disabled={
+                                loading ||
+                                item.cargandoVariantes
+                              }
+                            >
+                              Nueva variante
+                            </Button>
+                          )}
                         </Stack>
+
+                        {item.error_variante && (
+                          <Alert
+                            severity="error"
+                            sx={{
+                              mb: 1.5,
+                            }}
+                          >
+                            {
+                              item.error_variante
+                            }
+                          </Alert>
+                        )}
 
                         {item.cargandoVariantes && (
                           <Box
@@ -2421,12 +2764,15 @@ export default function IngresoFormDialog({
                         )}
 
                         {!item.cargandoVariantes &&
+                          !item.error_variante &&
                           item.variantes.length ===
                             0 && (
                             <Alert
                               severity="info"
                             >
-                              Este producto todavía no tiene variantes. Creá una con el botón "Nueva variante".
+                              {usaVariantes
+                                ? 'Este producto todavía no tiene variantes. Creá una con el botón "Nueva variante".'
+                                : "No se encontró la información interna del producto simple."}
                             </Alert>
                           )}
 
@@ -2468,7 +2814,9 @@ export default function IngresoFormDialog({
                                         700,
                                     }}
                                   >
-                                    Variante
+                                    {usaVariantes
+                                      ? "Variante"
+                                      : "Producto"}
                                   </Typography>
                                 </Grid>
 
@@ -2576,7 +2924,7 @@ export default function IngresoFormDialog({
                                             "center",
                                         }}
                                       >
-                                        {/* VARIANTE */}
+                                        {/* PRODUCTO / VARIANTE */}
 
                                         <Grid
                                           size={{
@@ -2593,14 +2941,25 @@ export default function IngresoFormDialog({
                                                 600,
                                             }}
                                           >
-                                            {variante.color ||
-                                              "Sin color"}{" "}
-                                            /{" "}
-                                            {variante.talle ||
-                                              "Sin talle"}
+                                            {usaVariantes
+                                              ? (
+                                                <>
+                                                  {variante.color ||
+                                                    "Sin color"}{" "}
+                                                  /{" "}
+                                                  {variante.talle ||
+                                                    "Sin talle"}
+                                                </>
+                                              )
+                                              : (
+                                                productoSeleccionado
+                                                  ?.nombre ||
+                                                "Producto"
+                                              )}
                                           </Typography>
 
-                                          {variante.codigo_barras && (
+                                          {usaVariantes &&
+                                            variante.codigo_barras && (
                                             <Typography
                                               variant="caption"
                                               color="text.secondary"
@@ -2609,6 +2968,15 @@ export default function IngresoFormDialog({
                                               {
                                                 variante.codigo_barras
                                               }
+                                            </Typography>
+                                          )}
+
+                                          {!usaVariantes && (
+                                            <Typography
+                                              variant="caption"
+                                              color="text.secondary"
+                                            >
+                                              Sin variantes
                                             </Typography>
                                           )}
                                         </Grid>

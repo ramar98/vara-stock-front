@@ -86,6 +86,17 @@ function obtenerDescripcionVariante(
   )}`;
 }
 
+function productoUsaVariantes(
+  producto,
+) {
+  return (
+    Number(
+      producto?.usa_variantes ??
+        1,
+    ) === 1
+  );
+}
+
 export default function AjusteStockDialog({
   open,
   productos = [],
@@ -95,11 +106,17 @@ export default function AjusteStockDialog({
   onClose,
   onGuardar,
 }) {
-  const [formulario, setFormulario] =
-    useState(estadoInicial);
+  const [
+    formulario,
+    setFormulario,
+  ] = useState(
+    estadoInicial,
+  );
 
-  const [variantes, setVariantes] =
-    useState([]);
+  const [
+    variantes,
+    setVariantes,
+  ] = useState([]);
 
   const [
     cargandoVariantes,
@@ -116,12 +133,49 @@ export default function AjusteStockDialog({
     setErroresFormulario,
   ] = useState({});
 
+  /*
+   * =====================================
+   * PRODUCTO SELECCIONADO
+   * =====================================
+   */
+
+  const productoSeleccionado =
+    useMemo(
+      () =>
+        productos.find(
+          (producto) =>
+            String(
+              producto.id,
+            ) ===
+            String(
+              formulario.producto_id,
+            ),
+        ) ?? null,
+      [
+        productos,
+        formulario.producto_id,
+      ],
+    );
+
+  const usaVariantes =
+    productoUsaVariantes(
+      productoSeleccionado,
+    );
+
+  /*
+   * =====================================
+   * VARIANTE SELECCIONADA
+   * =====================================
+   */
+
   const varianteSeleccionada =
     useMemo(
       () =>
         variantes.find(
           (variante) =>
-            Number(variante.id) ===
+            Number(
+              variante.id,
+            ) ===
             Number(
               formulario.variante_id,
             ),
@@ -131,6 +185,12 @@ export default function AjusteStockDialog({
         formulario.variante_id,
       ],
     );
+
+  /*
+   * =====================================
+   * REINICIAR
+   * =====================================
+   */
 
   useEffect(() => {
     if (!open) {
@@ -142,21 +202,46 @@ export default function AjusteStockDialog({
     });
 
     setVariantes([]);
-    setCargandoVariantes(false);
-    setErrorCargaVariantes("");
-    setErroresFormulario({});
+
+    setCargandoVariantes(
+      false,
+    );
+
+    setErrorCargaVariantes(
+      "",
+    );
+
+    setErroresFormulario(
+      {},
+    );
   }, [open]);
 
-  const cambiarCampo = (event) => {
-    const { name, value } =
-      event.target;
+  /*
+   * =====================================
+   * CAMBIAR CAMPO
+   * =====================================
+   */
 
-    setFormulario((estadoActual) => ({
-      ...estadoActual,
-      [name]: value,
-    }));
+  const cambiarCampo = (
+    event,
+  ) => {
+    const {
+      name,
+      value,
+    } = event.target;
 
-    if (erroresFormulario[name]) {
+    setFormulario(
+      (estadoActual) => ({
+        ...estadoActual,
+        [name]: value,
+      }),
+    );
+
+    if (
+      erroresFormulario[
+        name
+      ]
+    ) {
       setErroresFormulario(
         (estadoActual) => ({
           ...estadoActual,
@@ -166,114 +251,263 @@ export default function AjusteStockDialog({
     }
   };
 
-  const seleccionarProducto = async (
-    event,
-  ) => {
-    const productoId =
-      event.target.value;
+  /*
+   * =====================================
+   * SELECCIONAR PRODUCTO
+   * =====================================
+   */
 
-    setFormulario(
-      (estadoActual) => ({
-        ...estadoActual,
-        producto_id: productoId,
-        variante_id: "",
-        nuevo_stock: "",
-      }),
-    );
+  const seleccionarProducto =
+    async (
+      event,
+    ) => {
+      const productoId =
+        event.target.value;
 
-    setVariantes([]);
-    setErrorCargaVariantes("");
+      const producto =
+        productos.find(
+          (elemento) =>
+            String(
+              elemento.id,
+            ) ===
+            String(
+              productoId,
+            ),
+        );
 
-    setErroresFormulario(
-      (estadoActual) => ({
-        ...estadoActual,
-        producto_id: "",
-        variante_id: "",
-        nuevo_stock: "",
-      }),
-    );
+      const productoConVariantes =
+        productoUsaVariantes(
+          producto,
+        );
 
-    if (!productoId) {
-      return;
-    }
+      setFormulario(
+        (estadoActual) => ({
+          ...estadoActual,
 
-    setCargandoVariantes(true);
+          producto_id:
+            productoId,
 
-    try {
-      const { data } = await api.get(
-        `/variantes/producto/${productoId}`,
+          variante_id:
+            "",
+
+          nuevo_stock:
+            "",
+        }),
       );
 
-      setVariantes(
-        extraerDatos(data),
-      );
-    } catch (errorPeticion) {
       setVariantes([]);
 
       setErrorCargaVariantes(
-        errorPeticion?.response?.data
-          ?.message ||
-          errorPeticion?.response?.data
-            ?.error ||
-          errorPeticion?.message ||
-          "No se pudieron cargar las variantes del producto.",
+        "",
       );
-    } finally {
-      setCargandoVariantes(false);
-    }
-  };
 
-  const seleccionarVariante = (
-    event,
-  ) => {
-    const varianteId =
-      event.target.value;
+      setErroresFormulario(
+        (estadoActual) => ({
+          ...estadoActual,
 
-    const variante = variantes.find(
-      (elemento) =>
-        Number(elemento.id) ===
-        Number(varianteId),
-    );
+          producto_id:
+            "",
 
-    setFormulario(
-      (estadoActual) => ({
-        ...estadoActual,
-        variante_id: varianteId,
+          variante_id:
+            "",
 
-        nuevo_stock:
-          variante?.stock_actual ?? "",
-      }),
-    );
+          nuevo_stock:
+            "",
+        }),
+      );
 
-    setErroresFormulario(
-      (estadoActual) => ({
-        ...estadoActual,
-        variante_id: "",
-        nuevo_stock: "",
-      }),
-    );
-  };
+      if (!productoId) {
+        return;
+      }
+
+      setCargandoVariantes(
+        true,
+      );
+
+      try {
+        const {
+          data,
+        } =
+          await api.get(
+            `/variantes/producto/${productoId}`,
+          );
+
+        const variantesCargadas =
+          extraerDatos(
+            data,
+          );
+
+        setVariantes(
+          variantesCargadas,
+        );
+
+        /*
+         * =================================
+         * PRODUCTO SIN VARIANTES
+         * =================================
+         *
+         * El backend creó una variante
+         * interna automáticamente.
+         *
+         * La seleccionamos sin mostrarla.
+         */
+
+        if (
+          !productoConVariantes
+        ) {
+          const varianteInterna =
+            variantesCargadas[0];
+
+          if (
+            !varianteInterna
+          ) {
+            setErrorCargaVariantes(
+              "No se encontró la variante interna del producto.",
+            );
+
+            return;
+          }
+
+          setFormulario(
+            (estadoActual) => ({
+              ...estadoActual,
+
+              variante_id:
+                String(
+                  varianteInterna.id,
+                ),
+
+              /*
+               * Dejamos como valor inicial
+               * el stock actual.
+               *
+               * Después el usuario debe
+               * modificarlo para registrar
+               * el ajuste.
+               */
+
+              nuevo_stock:
+                String(
+                  varianteInterna
+                    .stock_actual ??
+                    0,
+                ),
+            }),
+          );
+        }
+      } catch (
+      errorPeticion
+      ) {
+        setVariantes([]);
+
+        setErrorCargaVariantes(
+          errorPeticion
+            ?.response
+            ?.data
+            ?.message ||
+          errorPeticion
+            ?.response
+            ?.data
+            ?.error ||
+          errorPeticion
+            ?.message ||
+          "No se pudieron cargar las variantes del producto.",
+        );
+      } finally {
+        setCargandoVariantes(
+          false,
+        );
+      }
+    };
+
+  /*
+   * =====================================
+   * SELECCIONAR VARIANTE
+   * =====================================
+   */
+
+  const seleccionarVariante =
+    (
+      event,
+    ) => {
+      const varianteId =
+        event.target.value;
+
+      const variante =
+        variantes.find(
+          (elemento) =>
+            Number(
+              elemento.id,
+            ) ===
+            Number(
+              varianteId,
+            ),
+        );
+
+      setFormulario(
+        (estadoActual) => ({
+          ...estadoActual,
+
+          variante_id:
+            varianteId,
+
+          nuevo_stock:
+            variante
+              ?.stock_actual ??
+            "",
+        }),
+      );
+
+      setErroresFormulario(
+        (estadoActual) => ({
+          ...estadoActual,
+
+          variante_id:
+            "",
+
+          nuevo_stock:
+            "",
+        }),
+      );
+    };
+
+  /*
+   * =====================================
+   * VALIDAR
+   * =====================================
+   */
 
   const validar = () => {
-    const nuevosErrores = {};
+    const nuevosErrores =
+      {};
 
-    if (!formulario.producto_id) {
+    if (
+      !formulario.producto_id
+    ) {
       nuevosErrores.producto_id =
         "Seleccioná un producto.";
     }
 
-    if (!formulario.variante_id) {
+    if (
+      !formulario.variante_id
+    ) {
       nuevosErrores.variante_id =
-        "Seleccioná una variante.";
+        usaVariantes
+          ? "Seleccioná una variante."
+          : "No se encontró la variante interna del producto.";
     }
 
-    const nuevoStock = Number(
-      formulario.nuevo_stock,
-    );
+    const nuevoStock =
+      Number(
+        formulario.nuevo_stock,
+      );
 
     if (
-      formulario.nuevo_stock === "" ||
-      !Number.isInteger(nuevoStock) ||
+      formulario.nuevo_stock ===
+        "" ||
+      !Number.isInteger(
+        nuevoStock,
+      ) ||
       nuevoStock < 0
     ) {
       nuevosErrores.nuevo_stock =
@@ -282,10 +516,12 @@ export default function AjusteStockDialog({
 
     if (
       varianteSeleccionada &&
-      formulario.nuevo_stock !== "" &&
+      formulario.nuevo_stock !==
+        "" &&
       nuevoStock ===
         Number(
-          varianteSeleccionada.stock_actual ??
+          varianteSeleccionada
+            .stock_actual ??
             0,
         )
     ) {
@@ -293,7 +529,9 @@ export default function AjusteStockDialog({
         "El nuevo stock debe ser diferente al stock actual.";
     }
 
-    if (!formulario.motivo) {
+    if (
+      !formulario.motivo
+    ) {
       nuevosErrores.motivo =
         "Seleccioná un motivo.";
     }
@@ -311,33 +549,59 @@ export default function AjusteStockDialog({
     );
 
     return (
-      Object.keys(nuevosErrores)
-        .length === 0
+      Object.keys(
+        nuevosErrores,
+      ).length === 0
     );
   };
 
-  const guardar = async () => {
-    if (!validar()) {
-      return;
-    }
+  /*
+   * =====================================
+   * GUARDAR
+   * =====================================
+   */
 
-    await onGuardar({
-      variante_id: Number(
-        formulario.variante_id,
-      ),
+  const guardar =
+    async () => {
+      if (!validar()) {
+        return;
+      }
 
-      nuevo_stock: Number(
-        formulario.nuevo_stock,
-      ),
+      await onGuardar({
+        /*
+         * IMPORTANTE:
+         *
+         * Para un producto simple
+         * enviamos igualmente variante_id.
+         *
+         * Es el ID de la variante interna.
+         */
 
-      motivo:
-        formulario.motivo,
+        variante_id:
+          Number(
+            formulario.variante_id,
+          ),
 
-      observacion:
-        formulario.observacion.trim() ||
-        null,
-    });
-  };
+        nuevo_stock:
+          Number(
+            formulario.nuevo_stock,
+          ),
+
+        motivo:
+          formulario.motivo,
+
+        observacion:
+          formulario.observacion
+            .trim() ||
+          null,
+      });
+    };
+
+  /*
+   * =====================================
+   * CERRAR
+   * =====================================
+   */
 
   const cerrar = () => {
     if (!loading) {
@@ -345,17 +609,31 @@ export default function AjusteStockDialog({
     }
   };
 
+  /*
+   * =====================================
+   * DIFERENCIA
+   * =====================================
+   */
+
   const diferencia =
     varianteSeleccionada &&
-    formulario.nuevo_stock !== ""
+    formulario.nuevo_stock !==
+      ""
       ? Number(
           formulario.nuevo_stock,
         ) -
         Number(
-          varianteSeleccionada.stock_actual ??
+          varianteSeleccionada
+            .stock_actual ??
             0,
         )
       : "";
+
+  /*
+   * =====================================
+   * RENDER
+   * =====================================
+   */
 
   return (
     <Dialog
@@ -369,10 +647,16 @@ export default function AjusteStockDialog({
       </DialogTitle>
 
       <DialogContent dividers>
+        {/* ======================= */}
+        {/* ERRORES */}
+        {/* ======================= */}
+
         {error && (
           <Alert
             severity="error"
-            sx={{ mb: 2 }}
+            sx={{
+              mb: 2,
+            }}
           >
             {error}
           </Alert>
@@ -381,20 +665,32 @@ export default function AjusteStockDialog({
         {errorCargaVariantes && (
           <Alert
             severity="error"
-            sx={{ mb: 2 }}
+            sx={{
+              mb: 2,
+            }}
           >
-            {errorCargaVariantes}
+            {
+              errorCargaVariantes
+            }
           </Alert>
         )}
 
-        {Array.isArray(errors) &&
-          errors.length > 0 && (
+        {Array.isArray(
+          errors,
+        ) &&
+          errors.length >
+            0 && (
             <Alert
               severity="error"
-              sx={{ mb: 2 }}
+              sx={{
+                mb: 2,
+              }}
             >
               {errors.map(
-                (mensaje, indice) => (
+                (
+                  mensaje,
+                  indice,
+                ) => (
                   <Typography
                     key={`${mensaje}-${indice}`}
                     variant="body2"
@@ -410,10 +706,18 @@ export default function AjusteStockDialog({
           container
           spacing={2}
         >
+          {/* ======================= */}
+          {/* PRODUCTO */}
+          {/* ======================= */}
+
           <Grid
             size={{
               xs: 12,
-              md: 6,
+              md:
+                productoSeleccionado &&
+                !usaVariantes
+                  ? 12
+                  : 6,
             }}
           >
             <TextField
@@ -434,76 +738,132 @@ export default function AjusteStockDialog({
               helperText={
                 erroresFormulario.producto_id
               }
-              disabled={loading}
+              disabled={
+                loading
+              }
             >
               <MenuItem value="">
                 Seleccionar producto
               </MenuItem>
 
               {productos.map(
-                (producto) => (
+                (
+                  producto,
+                ) => (
                   <MenuItem
-                    key={producto.id}
-                    value={producto.id}
+                    key={
+                      producto.id
+                    }
+                    value={
+                      producto.id
+                    }
                   >
                     {producto.codigo} -{" "}
                     {producto.nombre}
+
+                    {Number(
+                      producto.usa_variantes ??
+                        1,
+                    ) ===
+                      0 &&
+                      " — Sin variantes"}
                   </MenuItem>
                 ),
               )}
             </TextField>
           </Grid>
 
-          <Grid
-            size={{
-              xs: 12,
-              md: 6,
-            }}
-          >
-            <TextField
-              select
-              fullWidth
-              required
-              label="Variante"
-              name="variante_id"
-              value={
-                formulario.variante_id
-              }
-              onChange={
-                seleccionarVariante
-              }
-              error={Boolean(
-                erroresFormulario.variante_id,
-              )}
-              helperText={
-                erroresFormulario.variante_id
-              }
-              disabled={
-                loading ||
-                !formulario.producto_id ||
-                cargandoVariantes
-              }
+          {/* ======================= */}
+          {/* VARIANTE */}
+          {/* SOLO PRODUCTOS CON */}
+          {/* VARIANTES */}
+          {/* ======================= */}
+
+          {(
+            !productoSeleccionado ||
+            usaVariantes
+          ) && (
+            <Grid
+              size={{
+                xs: 12,
+                md: 6,
+              }}
             >
-              <MenuItem value="">
-                {cargandoVariantes
-                  ? "Cargando variantes..."
-                  : "Seleccionar variante"}
-              </MenuItem>
+              <TextField
+                select
+                fullWidth
+                required
+                label="Variante"
+                name="variante_id"
+                value={
+                  formulario.variante_id
+                }
+                onChange={
+                  seleccionarVariante
+                }
+                error={Boolean(
+                  erroresFormulario.variante_id,
+                )}
+                helperText={
+                  erroresFormulario.variante_id
+                }
+                disabled={
+                  loading ||
+                  !formulario.producto_id ||
+                  cargandoVariantes
+                }
+              >
+                <MenuItem value="">
+                  {cargandoVariantes
+                    ? "Cargando variantes..."
+                    : "Seleccionar variante"}
+                </MenuItem>
 
-              {variantes.map(
-                (variante) => (
-                  <MenuItem
-                    key={variante.id}
-                    value={variante.id}
-                  >
-                    {obtenerDescripcionVariante(
-                      variante,
-                    )}
-                  </MenuItem>
-                ),
-              )}
-            </TextField>
-          </Grid>
+                {variantes.map(
+                  (
+                    variante,
+                  ) => (
+                    <MenuItem
+                      key={
+                        variante.id
+                      }
+                      value={
+                        variante.id
+                      }
+                    >
+                      {obtenerDescripcionVariante(
+                        variante,
+                      )}
+                    </MenuItem>
+                  ),
+                )}
+              </TextField>
+            </Grid>
+          )}
+
+          {/* ======================= */}
+          {/* PRODUCTO SIMPLE */}
+          {/* ======================= */}
+
+          {productoSeleccionado &&
+            !usaVariantes && (
+              <Grid
+                size={{
+                  xs: 12,
+                }}
+              >
+                <Alert
+                  severity="info"
+                >
+                  Este producto no utiliza variantes. El ajuste se aplicará
+                  directamente al stock del producto.
+                </Alert>
+              </Grid>
+            )}
+
+          {/* ======================= */}
+          {/* STOCK ACTUAL */}
+          {/* ======================= */}
 
           <Grid
             size={{
@@ -516,15 +876,22 @@ export default function AjusteStockDialog({
               disabled
               label="Stock actual"
               value={
-                varianteSeleccionada
-                  ? Number(
-                      varianteSeleccionada.stock_actual ??
-                        0,
-                    )
-                  : ""
+                cargandoVariantes
+                  ? "Cargando..."
+                  : varianteSeleccionada
+                    ? Number(
+                        varianteSeleccionada
+                          .stock_actual ??
+                          0,
+                      )
+                    : ""
               }
             />
           </Grid>
+
+          {/* ======================= */}
+          {/* NUEVO STOCK */}
+          {/* ======================= */}
 
           <Grid
             size={{
@@ -541,7 +908,9 @@ export default function AjusteStockDialog({
               value={
                 formulario.nuevo_stock
               }
-              onChange={cambiarCampo}
+              onChange={
+                cambiarCampo
+              }
               error={Boolean(
                 erroresFormulario.nuevo_stock,
               )}
@@ -551,6 +920,7 @@ export default function AjusteStockDialog({
               }
               disabled={
                 loading ||
+                cargandoVariantes ||
                 !formulario.variante_id
               }
               slotProps={{
@@ -561,6 +931,10 @@ export default function AjusteStockDialog({
               }}
             />
           </Grid>
+
+          {/* ======================= */}
+          {/* MOTIVO */}
+          {/* ======================= */}
 
           <Grid
             size={{
@@ -577,27 +951,43 @@ export default function AjusteStockDialog({
               value={
                 formulario.motivo
               }
-              onChange={cambiarCampo}
+              onChange={
+                cambiarCampo
+              }
               error={Boolean(
                 erroresFormulario.motivo,
               )}
               helperText={
                 erroresFormulario.motivo
               }
-              disabled={loading}
+              disabled={
+                loading
+              }
             >
               {MOTIVOS.map(
-                (motivo) => (
+                (
+                  motivo,
+                ) => (
                   <MenuItem
-                    key={motivo.value}
-                    value={motivo.value}
+                    key={
+                      motivo.value
+                    }
+                    value={
+                      motivo.value
+                    }
                   >
-                    {motivo.label}
+                    {
+                      motivo.label
+                    }
                   </MenuItem>
                 ),
               )}
             </TextField>
           </Grid>
+
+          {/* ======================= */}
+          {/* DIFERENCIA */}
+          {/* ======================= */}
 
           <Grid
             size={{
@@ -609,9 +999,15 @@ export default function AjusteStockDialog({
               fullWidth
               disabled
               label="Diferencia"
-              value={diferencia}
+              value={
+                diferencia
+              }
             />
           </Grid>
+
+          {/* ======================= */}
+          {/* OBSERVACIÓN */}
+          {/* ======================= */}
 
           <Grid size={12}>
             <TextField
@@ -623,7 +1019,9 @@ export default function AjusteStockDialog({
               value={
                 formulario.observacion
               }
-              onChange={cambiarCampo}
+              onChange={
+                cambiarCampo
+              }
               error={Boolean(
                 erroresFormulario.observacion,
               )}
@@ -631,10 +1029,13 @@ export default function AjusteStockDialog({
                 erroresFormulario.observacion ||
                 `${formulario.observacion.length}/1000`
               }
-              disabled={loading}
+              disabled={
+                loading
+              }
               slotProps={{
                 htmlInput: {
-                  maxLength: 1000,
+                  maxLength:
+                    1000,
                 },
               }}
             />
@@ -650,15 +1051,21 @@ export default function AjusteStockDialog({
       >
         <Button
           variant="outlined"
-          onClick={cerrar}
-          disabled={loading}
+          onClick={
+            cerrar
+          }
+          disabled={
+            loading
+          }
         >
           Cancelar
         </Button>
 
         <Button
           variant="contained"
-          onClick={guardar}
+          onClick={
+            guardar
+          }
           disabled={
             loading ||
             cargandoVariantes

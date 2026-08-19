@@ -84,7 +84,21 @@ function obtenerUsuario(movimiento) {
   return nombreCompleto || "Sistema";
 }
 
-function obtenerVariante(movimiento) {
+function obtenerVariante(
+  movimiento,
+  usaVariantes,
+) {
+  /*
+   * Producto simple.
+   *
+   * No mostramos la variante interna
+   * porque para el usuario el producto
+   * no tiene variantes.
+   */
+  if (!usaVariantes) {
+    return "Producto sin variantes";
+  }
+
   const partes = [
     movimiento.color,
     movimiento.talle,
@@ -94,13 +108,29 @@ function obtenerVariante(movimiento) {
     return partes.join(" / ");
   }
 
-  return movimiento.codigo_barras || "-";
+  return (
+    movimiento.codigo_barras ||
+    "-"
+  );
 }
 
 export default function MovimientosPanel({
   producto,
 }) {
-  const productoId = producto?.id;
+  const productoId =
+    producto?.id;
+
+  /*
+   * =====================================
+   * TIPO DE PRODUCTO
+   * =====================================
+   */
+
+  const usaVariantes =
+    Number(
+      producto?.usa_variantes ??
+        1,
+    ) === 1;
 
   const {
     movimientos,
@@ -108,7 +138,10 @@ export default function MovimientosPanel({
     actualizandoMovimientos,
     errorMovimientos,
     recargarMovimientos,
-  } = useMovimientosProducto(productoId);
+  } =
+    useMovimientosProducto(
+      productoId,
+    );
 
   if (!productoId) {
     return (
@@ -120,6 +153,10 @@ export default function MovimientosPanel({
 
   return (
     <Box>
+      {/* ======================= */}
+      {/* ENCABEZADO */}
+      {/* ======================= */}
+
       <Stack
         direction={{
           xs: "column",
@@ -147,23 +184,46 @@ export default function MovimientosPanel({
           >
             Historial de ingresos, ventas, devoluciones y ajustes.
           </Typography>
+
+          {!usaVariantes && (
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{
+                display: "block",
+                mt: 0.5,
+              }}
+            >
+              Este producto no utiliza variantes.
+            </Typography>
+          )}
         </Box>
 
         <Button
           variant="outlined"
           startIcon={
             actualizandoMovimientos ? (
-              <CircularProgress size={17} />
+              <CircularProgress
+                size={17}
+              />
             ) : (
               <RefreshIcon />
             )
           }
-          onClick={() => recargarMovimientos()}
-          disabled={actualizandoMovimientos}
+          onClick={() =>
+            recargarMovimientos()
+          }
+          disabled={
+            actualizandoMovimientos
+          }
         >
           Actualizar
         </Button>
       </Stack>
+
+      {/* ======================= */}
+      {/* CARGANDO */}
+      {/* ======================= */}
 
       {cargandoMovimientos && (
         <Box
@@ -176,29 +236,46 @@ export default function MovimientosPanel({
         </Box>
       )}
 
+      {/* ======================= */}
+      {/* ERROR */}
+      {/* ======================= */}
+
       {!cargandoMovimientos &&
         errorMovimientos && (
           <Alert severity="error">
-            {errorMovimientos?.response?.data
+            {errorMovimientos
+              ?.response?.data
               ?.message ||
-              errorMovimientos?.response?.data
+              errorMovimientos
+                ?.response?.data
                 ?.error ||
-              errorMovimientos?.message ||
+              errorMovimientos
+                ?.message ||
               "No se pudieron cargar los movimientos."}
           </Alert>
         )}
 
+      {/* ======================= */}
+      {/* SIN MOVIMIENTOS */}
+      {/* ======================= */}
+
       {!cargandoMovimientos &&
         !errorMovimientos &&
-        movimientos.length === 0 && (
+        movimientos.length ===
+          0 && (
           <Alert severity="info">
             Este producto todavía no tiene movimientos de stock.
           </Alert>
         )}
 
+      {/* ======================= */}
+      {/* TABLA */}
+      {/* ======================= */}
+
       {!cargandoMovimientos &&
         !errorMovimientos &&
-        movimientos.length > 0 && (
+        movimientos.length >
+          0 && (
           <TableContainer
             component={Paper}
             variant="outlined"
@@ -215,7 +292,9 @@ export default function MovimientosPanel({
                   </TableCell>
 
                   <TableCell>
-                    Variante
+                    {usaVariantes
+                      ? "Variante"
+                      : "Producto"}
                   </TableCell>
 
                   <TableCell align="right">
@@ -242,26 +321,36 @@ export default function MovimientosPanel({
 
               <TableBody>
                 {movimientos.map(
-                  (movimiento) => {
+                  (
+                    movimiento,
+                  ) => {
                     const configuracion =
                       obtenerConfiguracionTipo(
                         movimiento.tipo,
                       );
 
-                    const cantidad = Number(
-                      movimiento.cantidad ?? 0,
-                    );
+                    const cantidad =
+                      Number(
+                        movimiento.cantidad ??
+                          0,
+                      );
 
                     return (
                       <TableRow
-                        key={movimiento.id}
+                        key={
+                          movimiento.id
+                        }
                         hover
                       >
+                        {/* FECHA */}
+
                         <TableCell>
                           {formatearFecha(
                             movimiento.created_at,
                           )}
                         </TableCell>
+
+                        {/* TIPO */}
 
                         <TableCell>
                           <Chip
@@ -275,39 +364,64 @@ export default function MovimientosPanel({
                           />
                         </TableCell>
 
+                        {/* PRODUCTO / VARIANTE */}
+
                         <TableCell>
-                          <Stack spacing={0.25}>
+                          <Stack
+                            spacing={
+                              0.25
+                            }
+                          >
                             <Typography
                               variant="body2"
-                              fontWeight={500}
+                              fontWeight={
+                                500
+                              }
                             >
                               {obtenerVariante(
                                 movimiento,
+                                usaVariantes,
                               )}
                             </Typography>
 
-                            {movimiento.codigo_barras && (
-                              <Typography
-                                variant="caption"
-                                color="text.secondary"
-                              >
-                                {
-                                  movimiento.codigo_barras
-                                }
-                              </Typography>
-                            )}
+                            {/*
+                             * El código de barras
+                             * solamente tiene sentido
+                             * mostrarlo visualmente
+                             * para productos que
+                             * utilizan variantes.
+                             */}
+
+                            {usaVariantes &&
+                              movimiento.codigo_barras && (
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                >
+                                  {
+                                    movimiento.codigo_barras
+                                  }
+                                </Typography>
+                              )}
                           </Stack>
                         </TableCell>
+
+                        {/* CANTIDAD */}
 
                         <TableCell
                           align="right"
                           sx={{
-                            fontWeight: 700,
+                            fontWeight:
+                              700,
                           }}
                         >
-                          {configuracion.signo}
+                          {
+                            configuracion.signo
+                          }
                           {cantidad}
                         </TableCell>
+
+                        {/* STOCK ANTERIOR */}
 
                         <TableCell align="right">
                           {Number(
@@ -316,10 +430,13 @@ export default function MovimientosPanel({
                           )}
                         </TableCell>
 
+                        {/* STOCK NUEVO */}
+
                         <TableCell
                           align="right"
                           sx={{
-                            fontWeight: 700,
+                            fontWeight:
+                              700,
                           }}
                         >
                           {Number(
@@ -328,8 +445,14 @@ export default function MovimientosPanel({
                           )}
                         </TableCell>
 
+                        {/* REFERENCIA */}
+
                         <TableCell>
-                          <Stack spacing={0.25}>
+                          <Stack
+                            spacing={
+                              0.25
+                            }
+                          >
                             <Typography variant="body2">
                               {movimiento.referencia ||
                                 "-"}
@@ -347,6 +470,8 @@ export default function MovimientosPanel({
                             )}
                           </Stack>
                         </TableCell>
+
+                        {/* USUARIO */}
 
                         <TableCell>
                           {obtenerUsuario(

@@ -1,4 +1,7 @@
-import { useMemo, useState } from "react";
+import {
+  useMemo,
+  useState,
+} from "react";
 
 import {
   Alert,
@@ -19,101 +22,252 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import RefreshIcon from "@mui/icons-material/Refresh";
 
-import { DataGrid } from "@mui/x-data-grid";
+import {
+  DataGrid,
+} from "@mui/x-data-grid";
 
-import { useAuth } from "../../auth/context/AuthContext";
+import {
+  useAuth,
+} from "../../auth/context/AuthContext";
+
 import useProductos from "../../productos/hooks/useProductos";
 
 import AjusteStockDialog from "../components/AjusteStockDialog";
 import useAjustesStock from "../hooks/useAjustesStock";
 
 const ETIQUETAS_MOTIVOS = {
-  CONTEO_FISICO: "Conteo físico",
-  ROTURA: "Rotura",
-  PERDIDA: "Pérdida",
-  ERROR_CARGA: "Error de carga",
-  DEVOLUCION: "Devolución",
-  OTRO: "Otro",
+  CONTEO_FISICO:
+    "Conteo físico",
+
+  ROTURA:
+    "Rotura",
+
+  PERDIDA:
+    "Pérdida",
+
+  ERROR_CARGA:
+    "Error de carga",
+
+  DEVOLUCION:
+    "Devolución",
+
+  OTRO:
+    "Otro",
 };
 
-function obtenerProductos(respuesta) {
-  if (Array.isArray(respuesta)) {
+function obtenerProductos(
+  respuesta,
+) {
+  if (
+    Array.isArray(
+      respuesta,
+    )
+  ) {
     return respuesta;
   }
 
-  if (Array.isArray(respuesta?.data)) {
+  if (
+    Array.isArray(
+      respuesta?.data,
+    )
+  ) {
     return respuesta.data;
   }
 
   return [];
 }
 
-function formatearFecha(valor) {
+function formatearFecha(
+  valor,
+) {
   if (!valor) {
     return "-";
   }
 
-  const fecha = new Date(valor);
+  const fecha =
+    new Date(
+      valor,
+    );
 
-  if (Number.isNaN(fecha.getTime())) {
+  if (
+    Number.isNaN(
+      fecha.getTime(),
+    )
+  ) {
     return "-";
   }
 
-  return new Intl.DateTimeFormat("es-AR", {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(fecha);
+  return new Intl.DateTimeFormat(
+    "es-AR",
+    {
+      dateStyle:
+        "short",
+
+      timeStyle:
+        "short",
+    },
+  ).format(
+    fecha,
+  );
 }
 
-function obtenerVariante(ajuste) {
+/*
+ * =====================================
+ * PRODUCTO SIN VARIANTES
+ * =====================================
+ */
+
+function esProductoSinVariantes(
+  ajuste,
+  productos,
+) {
+  /*
+   * Si el backend ya devuelve
+   * usa_variantes dentro del ajuste,
+   * lo usamos directamente.
+   */
+
+  if (
+    ajuste?.usa_variantes !==
+      undefined &&
+    ajuste?.usa_variantes !==
+      null
+  ) {
+    return (
+      Number(
+        ajuste.usa_variantes,
+      ) === 0
+    );
+  }
+
+  /*
+   * Si no viene en el ajuste,
+   * buscamos el producto en el
+   * catálogo cargado.
+   */
+
+  const producto =
+    productos.find(
+      (elemento) =>
+        String(
+          elemento.id,
+        ) ===
+        String(
+          ajuste?.producto_id,
+        ),
+    );
+
+  return (
+    Number(
+      producto?.usa_variantes ??
+        1,
+    ) === 0
+  );
+}
+
+function obtenerVariante(
+  ajuste,
+  productos,
+) {
+  if (
+    esProductoSinVariantes(
+      ajuste,
+      productos,
+    )
+  ) {
+    return "Producto sin variantes";
+  }
+
   const partes = [
     ajuste?.color,
     ajuste?.talle,
-  ].filter(Boolean);
+  ].filter(
+    Boolean,
+  );
 
-  if (partes.length > 0) {
-    return partes.join(" / ");
+  if (
+    partes.length >
+    0
+  ) {
+    return partes.join(
+      " / ",
+    );
   }
 
-  return ajuste?.codigo_barras || "-";
+  return (
+    ajuste?.codigo_barras ||
+    "-"
+  );
 }
 
-function obtenerUsuario(ajuste) {
-  const nombreCompleto = [
-    ajuste?.usuario_nombre,
-    ajuste?.usuario_apellido,
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .trim();
+function obtenerUsuario(
+  ajuste,
+) {
+  const nombreCompleto =
+    [
+      ajuste
+        ?.usuario_nombre,
 
-  return nombreCompleto || "Sistema";
+      ajuste
+        ?.usuario_apellido,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+
+  return (
+    nombreCompleto ||
+    "Sistema"
+  );
 }
 
-function obtenerMotivoDesdeReferencia(referencia) {
-  if (!referencia) {
+function obtenerMotivoDesdeReferencia(
+  referencia,
+) {
+  if (
+    !referencia
+  ) {
     return "OTRO";
   }
 
-  const texto = String(referencia);
-  const prefijo = "Ajuste de stock:";
+  const texto =
+    String(
+      referencia,
+    );
 
-  if (!texto.startsWith(prefijo)) {
+  const prefijo =
+    "Ajuste de stock:";
+
+  if (
+    !texto.startsWith(
+      prefijo,
+    )
+  ) {
     return "OTRO";
   }
 
   return texto
-    .slice(prefijo.length)
+    .slice(
+      prefijo.length,
+    )
     .trim()
     .toUpperCase();
 }
 
-function obtenerColorDiferencia(diferencia) {
-  if (diferencia > 0) {
+function obtenerColorDiferencia(
+  diferencia,
+) {
+  if (
+    diferencia >
+    0
+  ) {
     return "success";
   }
 
-  if (diferencia < 0) {
+  if (
+    diferencia <
+    0
+  ) {
     return "error";
   }
 
@@ -121,11 +275,18 @@ function obtenerColorDiferencia(diferencia) {
 }
 
 export default function AjustesStockPage() {
-  const { usuario } = useAuth();
+  const {
+    usuario,
+  } = useAuth();
 
-  const [filtros, setFiltros] = useState({
+  const [
+    filtros,
+    setFiltros,
+  ] = useState({
     fechaDesde: "",
+
     fechaHasta: "",
+
     productoId: "",
   });
 
@@ -137,264 +298,557 @@ export default function AjustesStockPage() {
     recargarAjustes,
     registrarAjuste,
     registrandoAjuste,
-  } = useAjustesStock(filtros);
+  } =
+    useAjustesStock(
+      filtros,
+    );
 
   const {
-    data: productosRespuesta,
-    isLoading: cargandoProductos,
-    isError: errorProductos,
-  } = useProductos();
+    data:
+      productosRespuesta,
 
-  const productos = useMemo(
-    () => obtenerProductos(productosRespuesta),
-    [productosRespuesta],
+    isLoading:
+      cargandoProductos,
+
+    isError:
+      errorProductos,
+  } =
+    useProductos();
+
+  const productos =
+    useMemo(
+      () =>
+        obtenerProductos(
+          productosRespuesta,
+        ),
+      [
+        productosRespuesta,
+      ],
+    );
+
+  const [
+    dialogAbierto,
+    setDialogAbierto,
+  ] = useState(
+    false,
   );
 
-  const [dialogAbierto, setDialogAbierto] =
-    useState(false);
+  const [
+    errorFormulario,
+    setErrorFormulario,
+  ] = useState(
+    "",
+  );
 
-  const [errorFormulario, setErrorFormulario] =
-    useState("");
+  const [
+    erroresFormulario,
+    setErroresFormulario,
+  ] = useState(
+    [],
+  );
 
-  const [erroresFormulario, setErroresFormulario] =
-    useState([]);
+  const [
+    notificacion,
+    setNotificacion,
+  ] = useState({
+    open:
+      false,
 
-  const [notificacion, setNotificacion] = useState({
-    open: false,
-    message: "",
-    severity: "success",
+    message:
+      "",
+
+    severity:
+      "success",
   });
 
-  const mostrarNotificacion = (
-    message,
-    severity = "success",
-  ) => {
-    setNotificacion({
-      open: true,
+  /*
+   * =====================================
+   * NOTIFICACIONES
+   * =====================================
+   */
+
+  const mostrarNotificacion =
+    (
       message,
-      severity,
-    });
-  };
+      severity =
+        "success",
+    ) => {
+      setNotificacion({
+        open:
+          true,
 
-  const cerrarNotificacion = () => {
-    setNotificacion((estadoActual) => ({
-      ...estadoActual,
-      open: false,
-    }));
-  };
+        message,
 
-  const cambiarFiltro = (event) => {
-    const { name, value } = event.target;
+        severity,
+      });
+    };
 
-    setFiltros((estadoActual) => ({
-      ...estadoActual,
-      [name]: value,
-    }));
-  };
+  const cerrarNotificacion =
+    () => {
+      setNotificacion(
+        (
+          estadoActual,
+        ) => ({
+          ...estadoActual,
 
-  const limpiarFiltros = () => {
-    setFiltros({
-      fechaDesde: "",
-      fechaHasta: "",
-      productoId: "",
-    });
-  };
-
-  const abrirNuevoAjuste = () => {
-    if (!usuario?.id) {
-      mostrarNotificacion(
-        "No se pudo identificar al usuario de la sesión.",
-        "error",
+          open:
+            false,
+        }),
       );
+    };
 
-      return;
-    }
+  /*
+   * =====================================
+   * FILTROS
+   * =====================================
+   */
 
-    setErrorFormulario("");
-    setErroresFormulario([]);
-    setDialogAbierto(true);
-  };
+  const cambiarFiltro =
+    (
+      event,
+    ) => {
+      const {
+        name,
+        value,
+      } =
+        event.target;
 
-  const cerrarDialog = () => {
-    if (registrandoAjuste) {
-      return;
-    }
+      setFiltros(
+        (
+          estadoActual,
+        ) => ({
+          ...estadoActual,
 
-    setDialogAbierto(false);
-    setErrorFormulario("");
-    setErroresFormulario([]);
-  };
+          [name]:
+            value,
+        }),
+      );
+    };
 
-  const guardarAjuste = async (datos) => {
-    setErrorFormulario("");
-    setErroresFormulario([]);
+  const limpiarFiltros =
+    () => {
+      setFiltros({
+        fechaDesde:
+          "",
 
-    if (!usuario?.id) {
+        fechaHasta:
+          "",
+
+        productoId:
+          "",
+      });
+    };
+
+  /*
+   * =====================================
+   * NUEVO AJUSTE
+   * =====================================
+   */
+
+  const abrirNuevoAjuste =
+    () => {
+      if (
+        !usuario?.id
+      ) {
+        mostrarNotificacion(
+          "No se pudo identificar al usuario de la sesión.",
+          "error",
+        );
+
+        return;
+      }
+
       setErrorFormulario(
-        "No se pudo identificar al usuario de la sesión.",
+        "",
       );
-
-      return;
-    }
-
-    const resultado = await registrarAjuste({
-      ...datos,
-      usuario_id: usuario.id,
-    });
-
-    if (!resultado.success) {
-      setErrorFormulario(resultado.message);
 
       setErroresFormulario(
-        resultado.errors ?? [],
+        [],
       );
 
-      return;
-    }
+      setDialogAbierto(
+        true,
+      );
+    };
 
-    setDialogAbierto(false);
+  const cerrarDialog =
+    () => {
+      if (
+        registrandoAjuste
+      ) {
+        return;
+      }
 
-    mostrarNotificacion(
-      resultado.message,
-      "success",
-    );
-  };
+      setDialogAbierto(
+        false,
+      );
+
+      setErrorFormulario(
+        "",
+      );
+
+      setErroresFormulario(
+        [],
+      );
+    };
+
+  /*
+   * =====================================
+   * GUARDAR AJUSTE
+   * =====================================
+   */
+
+  const guardarAjuste =
+    async (
+      datos,
+    ) => {
+      setErrorFormulario(
+        "",
+      );
+
+      setErroresFormulario(
+        [],
+      );
+
+      if (
+        !usuario?.id
+      ) {
+        setErrorFormulario(
+          "No se pudo identificar al usuario de la sesión.",
+        );
+
+        return;
+      }
+
+      const resultado =
+        await registrarAjuste({
+          ...datos,
+
+          usuario_id:
+            usuario.id,
+        });
+
+      if (
+        !resultado.success
+      ) {
+        setErrorFormulario(
+          resultado.message,
+        );
+
+        setErroresFormulario(
+          resultado.errors ??
+            [],
+        );
+
+        return;
+      }
+
+      setDialogAbierto(
+        false,
+      );
+
+      mostrarNotificacion(
+        resultado.message,
+        "success",
+      );
+    };
+
+  /*
+   * =====================================
+   * COLUMNAS
+   * =====================================
+   */
 
   const columnas = [
     {
       field: "id",
-      headerName: "N.º",
-      width: 80,
-    },
-    {
-      field: "created_at",
-      headerName: "Fecha",
-      width: 175,
-      valueFormatter: (value) =>
-        formatearFecha(value),
-    },
-    {
-      field: "producto_codigo",
-      headerName: "Código",
-      width: 120,
-      valueGetter: (value) =>
-        value || "-",
-    },
-    {
-      field: "producto_nombre",
-      headerName: "Producto",
-      minWidth: 210,
-      flex: 1,
-      valueGetter: (value) =>
-        value || "-",
-    },
-    {
-      field: "variante",
-      headerName: "Variante",
-      width: 160,
-      valueGetter: (_, row) =>
-        obtenerVariante(row),
-    },
-    {
-      field: "stock_anterior",
-      headerName: "Stock anterior",
-      width: 125,
-      align: "center",
-      headerAlign: "center",
-      valueGetter: (value) =>
-        Number(value ?? 0),
-    },
-    {
-      field: "stock_nuevo",
-      headerName: "Stock nuevo",
-      width: 120,
-      align: "center",
-      headerAlign: "center",
-      valueGetter: (value) =>
-        Number(value ?? 0),
-    },
-    {
-      field: "cantidad",
-      headerName: "Diferencia",
-      width: 115,
-      align: "center",
-      headerAlign: "center",
 
-      renderCell: (params) => {
-        const diferencia = Number(
-          params.value ?? 0,
-        );
+      headerName:
+        "N.º",
 
-        const texto =
-          diferencia > 0
-            ? `+${diferencia}`
-            : String(diferencia);
-
-        return (
-          <Chip
-            size="small"
-            label={texto}
-            color={obtenerColorDiferencia(
-              diferencia,
-            )}
-          />
-        );
-      },
+      width:
+        80,
     },
-    {
-      field: "motivo",
-      headerName: "Motivo",
-      width: 150,
 
-      valueGetter: (_, row) => {
-        const motivo =
-          obtenerMotivoDesdeReferencia(
-            row.referencia,
+    {
+      field:
+        "created_at",
+
+      headerName:
+        "Fecha",
+
+      width:
+        175,
+
+      valueFormatter:
+        (value) =>
+          formatearFecha(
+            value,
+          ),
+    },
+
+    {
+      field:
+        "producto_codigo",
+
+      headerName:
+        "Código",
+
+      width:
+        120,
+
+      valueGetter:
+        (value) =>
+          value ||
+          "-",
+    },
+
+    {
+      field:
+        "producto_nombre",
+
+      headerName:
+        "Producto",
+
+      minWidth:
+        210,
+
+      flex:
+        1,
+
+      valueGetter:
+        (value) =>
+          value ||
+          "-",
+    },
+
+    {
+      field:
+        "variante",
+
+      headerName:
+        "Variante",
+
+      width:
+        180,
+
+      valueGetter:
+        (
+          _,
+          row,
+        ) =>
+          obtenerVariante(
+            row,
+            productos,
+          ),
+    },
+
+    {
+      field:
+        "stock_anterior",
+
+      headerName:
+        "Stock anterior",
+
+      width:
+        125,
+
+      align:
+        "center",
+
+      headerAlign:
+        "center",
+
+      valueGetter:
+        (value) =>
+          Number(
+            value ??
+              0,
+          ),
+    },
+
+    {
+      field:
+        "stock_nuevo",
+
+      headerName:
+        "Stock nuevo",
+
+      width:
+        120,
+
+      align:
+        "center",
+
+      headerAlign:
+        "center",
+
+      valueGetter:
+        (value) =>
+          Number(
+            value ??
+              0,
+          ),
+    },
+
+    {
+      field:
+        "cantidad",
+
+      headerName:
+        "Diferencia",
+
+      width:
+        115,
+
+      align:
+        "center",
+
+      headerAlign:
+        "center",
+
+      renderCell:
+        (
+          params,
+        ) => {
+          const diferencia =
+            Number(
+              params.value ??
+                0,
+            );
+
+          const texto =
+            diferencia >
+            0
+              ? `+${diferencia}`
+              : String(
+                  diferencia,
+                );
+
+          return (
+            <Chip
+              size="small"
+              label={
+                texto
+              }
+              color={obtenerColorDiferencia(
+                diferencia,
+              )}
+            />
           );
+        },
+    },
 
-        return (
-          ETIQUETAS_MOTIVOS[motivo] ||
-          motivo ||
-          "-"
-        );
-      },
-    },
     {
-      field: "observacion",
-      headerName: "Observación",
-      minWidth: 220,
-      flex: 1,
-      valueGetter: (value) =>
-        value || "-",
+      field:
+        "motivo",
+
+      headerName:
+        "Motivo",
+
+      width:
+        150,
+
+      valueGetter:
+        (
+          _,
+          row,
+        ) => {
+          const motivo =
+            obtenerMotivoDesdeReferencia(
+              row.referencia,
+            );
+
+          return (
+            ETIQUETAS_MOTIVOS[
+              motivo
+            ] ||
+            motivo ||
+            "-"
+          );
+        },
     },
+
     {
-      field: "usuario",
-      headerName: "Usuario",
-      width: 170,
-      valueGetter: (_, row) =>
-        obtenerUsuario(row),
+      field:
+        "observacion",
+
+      headerName:
+        "Observación",
+
+      minWidth:
+        220,
+
+      flex:
+        1,
+
+      valueGetter:
+        (value) =>
+          value ||
+          "-",
+    },
+
+    {
+      field:
+        "usuario",
+
+      headerName:
+        "Usuario",
+
+      width:
+        170,
+
+      valueGetter:
+        (
+          _,
+          row,
+        ) =>
+          obtenerUsuario(
+            row,
+          ),
     },
   ];
 
+  /*
+   * =====================================
+   * RENDER
+   * =====================================
+   */
+
   return (
     <Box>
+      {/* ======================= */}
+      {/* ENCABEZADO */}
+      {/* ======================= */}
+
       <Stack
         direction={{
-          xs: "column",
-          sm: "row",
+          xs:
+            "column",
+
+          sm:
+            "row",
         }}
         justifyContent="space-between"
         alignItems={{
-          xs: "stretch",
-          sm: "center",
+          xs:
+            "stretch",
+
+          sm:
+            "center",
         }}
         spacing={2}
-        sx={{ mb: 3 }}
+        sx={{
+          mb: 3,
+        }}
       >
         <Box>
           <Typography
             variant="h4"
-            sx={{ fontWeight: 700 }}
+            sx={{
+              fontWeight:
+                700,
+            }}
           >
             Ajustes de stock
           </Typography>
@@ -402,7 +856,9 @@ export default function AjustesStockPage() {
           <Typography
             variant="body2"
             color="text.secondary"
-            sx={{ mt: 0.5 }}
+            sx={{
+              mt: 0.5,
+            }}
           >
             Corregí diferencias de inventario y conservá el historial.
           </Typography>
@@ -410,8 +866,12 @@ export default function AjustesStockPage() {
 
         <Button
           variant="contained"
-          startIcon={<AddIcon />}
-          onClick={abrirNuevoAjuste}
+          startIcon={
+            <AddIcon />
+          }
+          onClick={
+            abrirNuevoAjuste
+          }
           disabled={
             cargandoProductos ||
             !usuario?.id
@@ -421,26 +881,42 @@ export default function AjustesStockPage() {
         </Button>
       </Stack>
 
+      {/* ======================= */}
+      {/* ERRORES */}
+      {/* ======================= */}
+
       {errorProductos && (
         <Alert
           severity="warning"
-          sx={{ mb: 2 }}
+          sx={{
+            mb: 2,
+          }}
         >
-          No se pudo cargar el catálogo de productos necesario para
-          registrar ajustes.
+          No se pudo cargar el catálogo de productos necesario para registrar
+          ajustes.
         </Alert>
       )}
 
       {!usuario?.id && (
         <Alert
           severity="error"
-          sx={{ mb: 2 }}
+          sx={{
+            mb: 2,
+          }}
         >
           No se pudo identificar al usuario de la sesión.
         </Alert>
       )}
 
-      <Card sx={{ mb: 3 }}>
+      {/* ======================= */}
+      {/* FILTROS */}
+      {/* ======================= */}
+
+      <Card
+        sx={{
+          mb: 3,
+        }}
+      >
         <CardContent>
           <Grid
             container
@@ -458,11 +934,16 @@ export default function AjustesStockPage() {
                 type="date"
                 label="Desde"
                 name="fechaDesde"
-                value={filtros.fechaDesde}
-                onChange={cambiarFiltro}
+                value={
+                  filtros.fechaDesde
+                }
+                onChange={
+                  cambiarFiltro
+                }
                 slotProps={{
                   inputLabel: {
-                    shrink: true,
+                    shrink:
+                      true,
                   },
                 }}
               />
@@ -479,11 +960,16 @@ export default function AjustesStockPage() {
                 type="date"
                 label="Hasta"
                 name="fechaHasta"
-                value={filtros.fechaHasta}
-                onChange={cambiarFiltro}
+                value={
+                  filtros.fechaHasta
+                }
+                onChange={
+                  cambiarFiltro
+                }
                 slotProps={{
                   inputLabel: {
-                    shrink: true,
+                    shrink:
+                      true,
                   },
                 }}
               />
@@ -500,22 +986,41 @@ export default function AjustesStockPage() {
                 fullWidth
                 label="Producto"
                 name="productoId"
-                value={filtros.productoId}
-                onChange={cambiarFiltro}
+                value={
+                  filtros.productoId
+                }
+                onChange={
+                  cambiarFiltro
+                }
               >
                 <MenuItem value="">
                   Todos los productos
                 </MenuItem>
 
-                {productos.map((producto) => (
-                  <MenuItem
-                    key={producto.id}
-                    value={producto.id}
-                  >
-                    {producto.codigo} -{" "}
-                    {producto.nombre}
-                  </MenuItem>
-                ))}
+                {productos.map(
+                  (
+                    producto,
+                  ) => (
+                    <MenuItem
+                      key={
+                        producto.id
+                      }
+                      value={
+                        producto.id
+                      }
+                    >
+                      {producto.codigo} -{" "}
+                      {producto.nombre}
+
+                      {Number(
+                        producto.usa_variantes ??
+                          1,
+                      ) ===
+                        0 &&
+                        " — Sin variantes"}
+                    </MenuItem>
+                  ),
+                )}
               </TextField>
             </Grid>
 
@@ -529,7 +1034,9 @@ export default function AjustesStockPage() {
                 <Button
                   fullWidth
                   variant="outlined"
-                  onClick={limpiarFiltros}
+                  onClick={
+                    limpiarFiltros
+                  }
                 >
                   Limpiar
                 </Button>
@@ -561,15 +1068,26 @@ export default function AjustesStockPage() {
         </CardContent>
       </Card>
 
+      {/* ======================= */}
+      {/* TABLA */}
+      {/* ======================= */}
+
       <Card>
         <CardContent>
           {cargandoAjustes && (
             <Box
               sx={{
-                minHeight: 280,
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
+                minHeight:
+                  280,
+
+                display:
+                  "flex",
+
+                justifyContent:
+                  "center",
+
+                alignItems:
+                  "center",
               }}
             >
               <CircularProgress />
@@ -579,31 +1097,43 @@ export default function AjustesStockPage() {
           {!cargandoAjustes &&
             errorAjustes && (
               <Alert severity="error">
-                {errorAjustes?.response?.data
+                {errorAjustes
+                  ?.response?.data
                   ?.message ||
-                  errorAjustes?.response?.data
+                  errorAjustes
+                    ?.response?.data
                     ?.error ||
-                  errorAjustes?.message ||
+                  errorAjustes
+                    ?.message ||
                   "No se pudieron cargar los ajustes de stock."}
               </Alert>
             )}
 
           {!cargandoAjustes &&
             !errorAjustes &&
-            ajustes.length === 0 && (
+            ajustes.length ===
+              0 && (
               <Alert severity="info">
-                No hay ajustes registrados para los filtros
-                seleccionados.
+                No hay ajustes registrados para los filtros seleccionados.
               </Alert>
             )}
 
           {!cargandoAjustes &&
             !errorAjustes &&
-            ajustes.length > 0 && (
+            ajustes.length >
+              0 && (
               <DataGrid
-                rows={ajustes}
-                columns={columnas}
-                getRowId={(row) => row.id}
+                rows={
+                  ajustes
+                }
+                columns={
+                  columnas
+                }
+                getRowId={(
+                  row,
+                ) =>
+                  row.id
+                }
                 autoHeight
                 disableRowSelectionOnClick
                 pageSizeOptions={[
@@ -613,46 +1143,90 @@ export default function AjustesStockPage() {
                 ]}
                 initialState={{
                   pagination: {
-                    paginationModel: {
-                      page: 0,
-                      pageSize: 10,
-                    },
+                    paginationModel:
+                      {
+                        page:
+                          0,
+
+                        pageSize:
+                          10,
+                      },
                   },
                 }}
                 sx={{
-                  border: 0,
+                  border:
+                    0,
                 }}
               />
             )}
         </CardContent>
       </Card>
 
+      {/* ======================= */}
+      {/* DIALOG AJUSTE */}
+      {/* ======================= */}
+
       <AjusteStockDialog
-        open={dialogAbierto}
-        productos={productos}
-        usuarioId={usuario?.id}
-        loading={registrandoAjuste}
-        error={errorFormulario}
-        errors={erroresFormulario}
-        onClose={cerrarDialog}
-        onGuardar={guardarAjuste}
+        open={
+          dialogAbierto
+        }
+        productos={
+          productos
+        }
+        usuarioId={
+          usuario?.id
+        }
+        loading={
+          registrandoAjuste
+        }
+        error={
+          errorFormulario
+        }
+        errors={
+          erroresFormulario
+        }
+        onClose={
+          cerrarDialog
+        }
+        onGuardar={
+          guardarAjuste
+        }
       />
 
+      {/* ======================= */}
+      {/* NOTIFICACIÓN */}
+      {/* ======================= */}
+
       <Snackbar
-        open={notificacion.open}
-        autoHideDuration={4000}
-        onClose={cerrarNotificacion}
+        open={
+          notificacion.open
+        }
+        autoHideDuration={
+          4000
+        }
+        onClose={
+          cerrarNotificacion
+        }
         anchorOrigin={{
-          vertical: "bottom",
-          horizontal: "right",
+          vertical:
+            "bottom",
+
+          horizontal:
+            "right",
         }}
       >
         <Alert
-          severity={notificacion.severity}
+          severity={
+            notificacion.severity
+          }
           variant="filled"
-          onClose={cerrarNotificacion}
+          onClose={
+            cerrarNotificacion
+          }
         >
-          {notificacion.message}
+          {
+            notificacion.message
+          }
         </Alert>
       </Snackbar>
     </Box>

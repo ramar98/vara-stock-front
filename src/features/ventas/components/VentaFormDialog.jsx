@@ -103,6 +103,12 @@ function crearItemVacio() {
 
     cargandoVariantes:
       false,
+
+    usa_variantes:
+      true,
+
+    error_variante:
+      "",
   };
 }
 
@@ -176,6 +182,17 @@ function normalizarTexto(valor) {
     )
     .toLowerCase()
     .trim();
+}
+
+function productoUsaVariantes(
+  producto,
+) {
+  return (
+    Number(
+      producto?.usa_variantes ??
+        1,
+    ) === 1
+  );
 }
 
 /*
@@ -658,6 +675,55 @@ export default function VentaFormDialog({
       item,
       productoId,
     ) => {
+      if (!productoId) {
+        modificarItem(
+          item.idTemporal,
+          {
+            producto_id:
+              "",
+
+            variante_id:
+              "",
+
+            precio_unitario:
+              "",
+
+            stock_disponible:
+              0,
+
+            variantes:
+              [],
+
+            cargandoVariantes:
+              false,
+
+            usa_variantes:
+              true,
+
+            error_variante:
+              "",
+          },
+        );
+
+        return;
+      }
+
+      const productoSeleccionado =
+        productos.find(
+          (producto) =>
+            String(
+              producto.id,
+            ) ===
+            String(
+              productoId,
+            ),
+        );
+
+      const usaVariantes =
+        productoUsaVariantes(
+          productoSeleccionado,
+        );
+
       modificarItem(
         item.idTemporal,
         {
@@ -677,15 +743,15 @@ export default function VentaFormDialog({
             [],
 
           cargandoVariantes:
-            Boolean(
-              productoId,
-            ),
+            true,
+
+          usa_variantes:
+            usaVariantes,
+
+          error_variante:
+            "",
         },
       );
-
-      if (!productoId) {
-        return;
-      }
 
       try {
         const {
@@ -695,27 +761,139 @@ export default function VentaFormDialog({
             `/variantes/producto/${productoId}`,
           );
 
+        const variantes =
+          extraerDatos(
+            data,
+          );
+
+        if (!usaVariantes) {
+          const varianteInterna =
+            variantes[0];
+
+          if (
+            !varianteInterna
+          ) {
+            modificarItem(
+              item.idTemporal,
+              {
+                variantes:
+                  [],
+
+                variante_id:
+                  "",
+
+                precio_unitario:
+                  "",
+
+                stock_disponible:
+                  0,
+
+                cargandoVariantes:
+                  false,
+
+                usa_variantes:
+                  false,
+
+                error_variante:
+                  "No se encontró la variante interna del producto.",
+              },
+            );
+
+            return;
+          }
+
+          modificarItem(
+            item.idTemporal,
+            {
+              variantes,
+
+              variante_id:
+                String(
+                  varianteInterna.id,
+                ),
+
+              precio_unitario:
+                varianteInterna
+                  .precio_venta ??
+                productoSeleccionado
+                  ?.precio_venta_default ??
+                "",
+
+              stock_disponible:
+                Number(
+                  varianteInterna
+                    .stock_actual ??
+                    0,
+                ),
+
+              cargandoVariantes:
+                false,
+
+              usa_variantes:
+                false,
+
+              error_variante:
+                "",
+            },
+          );
+
+          return;
+        }
+
         modificarItem(
           item.idTemporal,
           {
-            variantes:
-              extraerDatos(
-                data,
-              ),
+            variantes,
+
+            variante_id:
+              "",
+
+            precio_unitario:
+              "",
+
+            stock_disponible:
+              0,
 
             cargandoVariantes:
               false,
+
+            usa_variantes:
+              true,
+
+            error_variante:
+              "",
           },
         );
-      } catch {
+      } catch (
+      errorPeticion
+      ) {
         modificarItem(
           item.idTemporal,
           {
             variantes:
               [],
 
+            variante_id:
+              "",
+
+            precio_unitario:
+              "",
+
+            stock_disponible:
+              0,
+
             cargandoVariantes:
               false,
+
+            usa_variantes:
+              usaVariantes,
+
+            error_variante:
+              errorPeticion
+                ?.response
+                ?.data
+                ?.message ||
+              "No se pudo cargar la información de stock del producto.",
           },
         );
       }
@@ -945,10 +1123,22 @@ export default function VentaFormDialog({
           nuevosErrores.productos =
             `Seleccioná el producto del ítem ${numeroItem}.`;
         } else if (
+          item.cargandoVariantes
+        ) {
+          nuevosErrores.productos =
+            `Esperá a que termine de cargarse el producto del ítem ${numeroItem}.`;
+        } else if (
+          item.error_variante
+        ) {
+          nuevosErrores.productos =
+            `No se pudo preparar el producto del ítem ${numeroItem}.`;
+        } else if (
           !varianteId
         ) {
           nuevosErrores.productos =
-            `Seleccioná la variante del ítem ${numeroItem}.`;
+            item.usa_variantes
+              ? `Seleccioná la variante del ítem ${numeroItem}.`
+              : `No se encontró la variante interna del producto del ítem ${numeroItem}.`;
         } else if (
           !Number.isInteger(
             cantidad,
@@ -979,7 +1169,7 @@ export default function VentaFormDialog({
           )
         ) {
           nuevosErrores.productos =
-            `La variante del ítem ${numeroItem} está repetida.`;
+            `El producto o variante del ítem ${numeroItem} está repetido.`;
         }
 
         if (
@@ -1409,7 +1599,7 @@ export default function VentaFormDialog({
                 variant="body2"
                 color="text.secondary"
               >
-                Seleccioná las prendas, variantes y cantidades.
+                Seleccioná los productos, variantes cuando correspondan y cantidades.
               </Typography>
             </Box>
 
@@ -1455,6 +1645,11 @@ export default function VentaFormDialog({
                 const productoSeleccionado =
                   obtenerProductoSeleccionado(
                     item,
+                  );
+
+                const usaVariantes =
+                  productoUsaVariantes(
+                    productoSeleccionado,
                   );
 
                 return (
@@ -1624,6 +1819,17 @@ export default function VentaFormDialog({
                                 </Typography>
                               )}
 
+                              {!usaVariantes && (
+                                <Chip
+                                  label="Sin variantes"
+                                  size="small"
+                                  variant="outlined"
+                                  sx={{
+                                    mt: 0.5,
+                                  }}
+                                />
+                              )}
+
                               <Typography
                                 variant="caption"
                                 color="text.secondary"
@@ -1672,68 +1878,153 @@ export default function VentaFormDialog({
                           md: 2.5,
                         }}
                       >
-                        <TextField
-                          select
-                          fullWidth
-                          label="Variante"
-                          value={
-                            item.variante_id
-                          }
-                          onChange={(
-                            event,
-                          ) =>
-                            seleccionarVariante(
-                              item,
-                              event
-                                .target
-                                .value,
-                            )
-                          }
-                          disabled={
-                            loading ||
-                            !item.producto_id ||
-                            item.cargandoVariantes
-                          }
-                        >
-                          <MenuItem value="">
-                            {item.cargandoVariantes
-                              ? "Cargando..."
-                              : "Seleccionar variante"}
-                          </MenuItem>
+                        {!productoSeleccionado ||
+                        usaVariantes ? (
+                          <TextField
+                            select
+                            fullWidth
+                            label="Variante"
+                            value={
+                              item.variante_id
+                            }
+                            onChange={(
+                              event,
+                            ) =>
+                              seleccionarVariante(
+                                item,
+                                event
+                                  .target
+                                  .value,
+                              )
+                            }
+                            disabled={
+                              loading ||
+                              !item.producto_id ||
+                              item.cargandoVariantes
+                            }
+                          >
+                            <MenuItem value="">
+                              {item.cargandoVariantes
+                                ? "Cargando..."
+                                : "Seleccionar variante"}
+                            </MenuItem>
 
-                          {item.variantes.map(
-                            (
-                              variante,
-                            ) => (
-                              <MenuItem
-                                key={
-                                  variante.id
-                                }
-                                value={
-                                  variante.id
-                                }
-                                disabled={
-                                  Number(
+                            {item.variantes.map(
+                              (
+                                variante,
+                              ) => (
+                                <MenuItem
+                                  key={
+                                    variante.id
+                                  }
+                                  value={
+                                    variante.id
+                                  }
+                                  disabled={
+                                    Number(
+                                      variante.stock_actual ??
+                                        0,
+                                    ) <=
+                                    0
+                                  }
+                                >
+                                  {variante.color ||
+                                    "Sin color"}{" "}
+                                  /{" "}
+                                  {variante.talle ||
+                                    "Sin talle"}{" "}
+                                  — Stock:{" "}
+                                  {Number(
                                     variante.stock_actual ??
                                       0,
-                                  ) <=
-                                  0
-                                }
+                                  )}
+                                </MenuItem>
+                              ),
+                            )}
+                          </TextField>
+                        ) : (
+                          <Paper
+                            variant="outlined"
+                            sx={{
+                              minHeight:
+                                56,
+
+                              px: 1.5,
+
+                              py: 1,
+
+                              borderRadius:
+                                2,
+
+                              display:
+                                "flex",
+
+                              flexDirection:
+                                "column",
+
+                              justifyContent:
+                                "center",
+                            }}
+                          >
+                            {item.cargandoVariantes ? (
+                              <Stack
+                                direction="row"
+                                spacing={1}
+                                alignItems="center"
                               >
-                                {variante.color ||
-                                  "Sin color"}{" "}
-                                /{" "}
-                                {variante.talle ||
-                                  "Sin talle"}{" "}
-                                — Stock:{" "}
-                                {Number(
-                                  variante.stock_actual ??
-                                    0,
-                                )}
-                              </MenuItem>
-                            ),
-                          )}
-                        </TextField>
+                                <CircularProgress
+                                  size={18}
+                                />
+
+                                <Typography
+                                  variant="body2"
+                                >
+                                  Cargando producto...
+                                </Typography>
+                              </Stack>
+                            ) : (
+                              <>
+                                <Typography
+                                  variant="body2"
+                                  sx={{
+                                    fontWeight:
+                                      700,
+                                  }}
+                                >
+                                  Sin variantes
+                                </Typography>
+
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                >
+                                  Stock disponible:{" "}
+                                  {Number(
+                                    item.stock_disponible ??
+                                      0,
+                                  )}
+                                </Typography>
+                              </>
+                            )}
+                          </Paper>
+                        )}
+
+                        {item.error_variante && (
+                          <Typography
+                            variant="caption"
+                            color="error"
+                            sx={{
+                              display:
+                                "block",
+
+                              mt: 0.75,
+                            }}
+                          >
+                            {
+                              item.error_variante
+                            }
+                          </Typography>
+                        )}
                       </Grid>
 
                       {/* ==================== */}
@@ -2465,6 +2756,20 @@ export default function VentaFormDialog({
                           {producto.categoria ||
                             "Sin categoría"}
                         </Typography>
+
+                        {Number(
+                          producto.usa_variantes ??
+                            1,
+                        ) === 0 && (
+                          <Chip
+                            label="Sin variantes"
+                            size="small"
+                            variant="outlined"
+                            sx={{
+                              mt: 0.75,
+                            }}
+                          />
+                        )}
                       </Box>
 
                       {/* STOCK */}

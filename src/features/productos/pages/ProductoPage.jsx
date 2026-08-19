@@ -29,11 +29,40 @@ import ProductoDetalleDialog from "../components/ProductoDetalleDialog";
 import ProductoDialog from "../components/ProductoDialog";
 import ProductoTable from "../components/ProductoTable";
 
+/*
+ * =====================================
+ * NORMALIZAR ROL
+ * =====================================
+ */
+
 function normalizarRol(rol) {
   return String(rol ?? "")
     .trim()
     .toUpperCase();
 }
+
+/*
+ * =====================================
+ * PRODUCTO USA VARIANTES
+ * =====================================
+ */
+
+function productoUsaVariantes(
+  producto,
+) {
+  return (
+    Number(
+      producto?.usa_variantes ??
+        1,
+    ) === 1
+  );
+}
+
+/*
+ * =====================================
+ * PRODUCTOS
+ * =====================================
+ */
 
 export default function ProductoPage() {
   const {
@@ -53,6 +82,12 @@ export default function ProductoPage() {
     rolUsuario ===
     "VENDEDOR";
 
+  /*
+   * ===================================
+   * PRODUCTOS
+   * ===================================
+   */
+
   const {
     data,
     isLoading,
@@ -60,13 +95,22 @@ export default function ProductoPage() {
     error,
   } = useProductos();
 
+  /*
+   * ===================================
+   * CATÁLOGOS
+   * ===================================
+   */
+
   const {
     data: catalogos,
+
     isLoading:
-    cargandoCatalogos,
+      cargandoCatalogos,
+
     isError:
-    errorCatalogos,
-  } = useCatalogosProductos();
+      errorCatalogos,
+  } =
+    useCatalogosProductos();
 
   const categorias =
     catalogos?.categorias ??
@@ -88,12 +132,25 @@ export default function ProductoPage() {
     catalogos?.talles ??
     [];
 
+  /*
+   * ===================================
+   * MUTACIONES
+   * ===================================
+   */
+
   const {
     guardarProducto,
     borrarProducto,
     guardando,
     eliminando,
-  } = useProductoMutations();
+  } =
+    useProductoMutations();
+
+  /*
+   * ===================================
+   * ESTADOS
+   * ===================================
+   */
 
   const [
     busqueda,
@@ -144,6 +201,12 @@ export default function ProductoPage() {
     setTabDetalleInicial,
   ] = useState(0);
 
+  /*
+   * ===================================
+   * NORMALIZAR PRODUCTOS
+   * ===================================
+   */
+
   const productos =
     useMemo(() => {
       if (
@@ -162,6 +225,12 @@ export default function ProductoPage() {
 
       return [];
     }, [data]);
+
+  /*
+   * ===================================
+   * FILTRAR PRODUCTOS
+   * ===================================
+   */
 
   const productosFiltrados =
     useMemo(() => {
@@ -201,6 +270,12 @@ export default function ProductoPage() {
       busqueda,
     ]);
 
+  /*
+   * ===================================
+   * NOTIFICACIONES
+   * ===================================
+   */
+
   const mostrarNotificacion = (
     message,
     severity = "success",
@@ -222,6 +297,12 @@ export default function ProductoPage() {
       );
     };
 
+  /*
+   * ===================================
+   * NUEVO PRODUCTO
+   * ===================================
+   */
+
   const abrirNuevoProducto =
     () => {
       if (
@@ -240,6 +321,12 @@ export default function ProductoPage() {
         true,
       );
     };
+
+  /*
+   * ===================================
+   * EDITAR PRODUCTO
+   * ===================================
+   */
 
   const abrirEditarProducto =
     (producto) => {
@@ -268,6 +355,12 @@ export default function ProductoPage() {
       );
     };
 
+  /*
+   * ===================================
+   * CERRAR DIALOG
+   * ===================================
+   */
+
   const cerrarDialog =
     () => {
       if (guardando) {
@@ -284,6 +377,12 @@ export default function ProductoPage() {
 
       setErrorFormulario("");
     };
+
+  /*
+   * ===================================
+   * VER DETALLE
+   * ===================================
+   */
 
   const abrirDetalleProducto = (
     producto,
@@ -308,6 +407,12 @@ export default function ProductoPage() {
       );
     };
 
+  /*
+   * ===================================
+   * EDITAR DESDE DETALLE
+   * ===================================
+   */
+
   const editarDesdeDetalle =
     (producto) => {
       if (
@@ -323,6 +428,12 @@ export default function ProductoPage() {
       );
     };
 
+  /*
+   * ===================================
+   * GUARDAR PRODUCTO
+   * ===================================
+   */
+
   const guardar = async (
     datos,
   ) => {
@@ -332,8 +443,12 @@ export default function ProductoPage() {
 
     setErrorFormulario("");
 
-    // Guardamos esto antes porque
-    // después limpiamos productoSeleccionado.
+    /*
+     * Guardamos esto antes porque
+     * después limpiamos
+     * productoSeleccionado.
+     */
+
     const creandoProducto =
       !productoSeleccionado?.id;
 
@@ -368,16 +483,20 @@ export default function ProductoPage() {
      * Si solamente estábamos editando,
      * terminamos acá.
      */
+
     if (!creandoProducto) {
       return;
     }
 
     /*
-     * Producto recién creado.
+     * =================================
+     * PRODUCTO RECIÉN CREADO
+     * =================================
      *
      * guardarProducto debería devolver
      * el producto creado en data.
      */
+
     const productoCreado =
       resultado.data;
 
@@ -390,15 +509,46 @@ export default function ProductoPage() {
     );
 
     /*
+     * =================================
+     * TAB INICIAL
+     * =================================
+     *
+     * Producto con variantes:
+     *
      * 0 = Información
      * 1 = Variantes
      * 2 = Imágenes
      * 3 = Movimientos
+     *
+     * Producto simple:
+     *
+     * No mostramos el tab Variantes.
+     * Por eso abrimos Información.
+     *
+     * La variante interna continúa
+     * existiendo en backend, pero no
+     * se expone en la interfaz.
      */
-    setTabDetalleInicial(1);
+
+    const usaVariantes =
+      productoUsaVariantes(
+        productoCreado,
+      );
+
+    setTabDetalleInicial(
+      usaVariantes
+        ? 1
+        : 0,
+    );
 
     setDetalleAbierto(true);
   };
+
+  /*
+   * ===================================
+   * SOLICITAR ELIMINACIÓN
+   * ===================================
+   */
 
   const solicitarEliminacion =
     (producto) => {
@@ -413,6 +563,12 @@ export default function ProductoPage() {
       );
     };
 
+  /*
+   * ===================================
+   * CANCELAR ELIMINACIÓN
+   * ===================================
+   */
+
   const cancelarEliminacion =
     () => {
       if (!eliminando) {
@@ -421,6 +577,12 @@ export default function ProductoPage() {
         );
       }
     };
+
+  /*
+   * ===================================
+   * CONFIRMAR ELIMINACIÓN
+   * ===================================
+   */
 
   const confirmarEliminacion =
     async () => {
@@ -457,14 +619,23 @@ export default function ProductoPage() {
       );
     };
 
+  /*
+   * ===================================
+   * CARGANDO
+   * ===================================
+   */
+
   if (isLoading) {
     return (
       <Box
         sx={{
           minHeight: 300,
+
           display: "flex",
+
           alignItems:
             "center",
+
           justifyContent:
             "center",
         }}
@@ -473,6 +644,12 @@ export default function ProductoPage() {
       </Box>
     );
   }
+
+  /*
+   * ===================================
+   * ERROR
+   * ===================================
+   */
 
   if (isError) {
     return (
@@ -491,8 +668,18 @@ export default function ProductoPage() {
     );
   }
 
+  /*
+   * ===================================
+   * RENDER
+   * ===================================
+   */
+
   return (
     <Box>
+      {/* ======================== */}
+      {/* ENCABEZADO */}
+      {/* ======================== */}
+
       <Stack
         direction={{
           xs: "column",
@@ -501,8 +688,10 @@ export default function ProductoPage() {
         spacing={2}
         sx={{
           mb: 3,
+
           justifyContent:
             "space-between",
+
           alignItems: {
             xs: "stretch",
             sm: "center",
@@ -528,7 +717,7 @@ export default function ProductoPage() {
             }}
           >
             {esAdministrador
-              ? "Administrá las prendas, variantes, precios y existencias."
+              ? "Administrá productos, precios, variantes y existencias."
               : "Consultá productos, precios de venta y existencias."}
           </Typography>
         </Box>
@@ -551,6 +740,10 @@ export default function ProductoPage() {
         )}
       </Stack>
 
+      {/* ======================== */}
+      {/* ERROR CATÁLOGOS */}
+      {/* ======================== */}
+
       {errorCatalogos &&
         esAdministrador && (
           <Alert
@@ -564,6 +757,10 @@ export default function ProductoPage() {
             talles.
           </Alert>
         )}
+
+      {/* ======================== */}
+      {/* LISTADO */}
+      {/* ======================== */}
 
       <Card>
         <CardContent>
@@ -586,10 +783,10 @@ export default function ProductoPage() {
           />
 
           {productosFiltrados.length ===
-            0 ? (
+          0 ? (
             <Alert severity="info">
               {productos.length ===
-                0
+              0
                 ? "Todavía no hay productos registrados."
                 : "No se encontraron productos con ese criterio."}
             </Alert>
@@ -622,6 +819,10 @@ export default function ProductoPage() {
         </CardContent>
       </Card>
 
+      {/* ======================== */}
+      {/* DIALOG PRODUCTO */}
+      {/* ======================== */}
+
       {esAdministrador && (
         <ProductoDialog
           open={
@@ -653,6 +854,10 @@ export default function ProductoPage() {
         />
       )}
 
+      {/* ======================== */}
+      {/* DETALLE PRODUCTO */}
+      {/* ======================== */}
+
       <ProductoDetalleDialog
         open={
           detalleAbierto
@@ -683,6 +888,10 @@ export default function ProductoPage() {
           mostrarNotificacion
         }
       />
+
+      {/* ======================== */}
+      {/* CONFIRMAR ELIMINACIÓN */}
+      {/* ======================== */}
 
       {esAdministrador && (
         <Dialog
@@ -761,6 +970,10 @@ export default function ProductoPage() {
         </Dialog>
       )}
 
+      {/* ======================== */}
+      {/* NOTIFICACIÓN */}
+      {/* ======================== */}
+
       <Snackbar
         open={
           notificacion.open
@@ -774,6 +987,7 @@ export default function ProductoPage() {
         anchorOrigin={{
           vertical:
             "bottom",
+
           horizontal:
             "right",
         }}

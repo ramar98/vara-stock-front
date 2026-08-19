@@ -20,6 +20,12 @@ const API_URL = (
   "http://localhost:3001/api"
 ).replace(/\/api\/?$/, "");
 
+/*
+ * =====================================
+ * FORMATEAR MONEDA
+ * =====================================
+ */
+
 function formatearMoneda(valor) {
   return new Intl.NumberFormat(
     "es-AR",
@@ -32,6 +38,12 @@ function formatearMoneda(valor) {
     Number(valor ?? 0),
   );
 }
+
+/*
+ * =====================================
+ * URL IMAGEN
+ * =====================================
+ */
 
 function obtenerUrlImagen(ruta) {
   if (!ruta) {
@@ -60,6 +72,29 @@ function obtenerUrlImagen(ruta) {
     "",
   )}`;
 }
+
+/*
+ * =====================================
+ * PRODUCTO USA VARIANTES
+ * =====================================
+ */
+
+function productoUsaVariantes(
+  producto,
+) {
+  return (
+    Number(
+      producto?.usa_variantes ??
+        1,
+    ) === 1
+  );
+}
+
+/*
+ * =====================================
+ * TABLA DE PRODUCTOS
+ * =====================================
+ */
 
 export default function ProductoTable({
   productos = [],
@@ -341,7 +376,9 @@ export default function ProductoTable({
             whiteSpace: "nowrap",
           }}
         >
-          {formatearMoneda(params.value)}
+          {formatearMoneda(
+            params.value,
+          )}
         </Typography>
       </Box>
     ),
@@ -364,13 +401,19 @@ export default function ProductoTable({
     headerAlign: "center",
 
     renderCell: (params) => {
-      const stock = Number(params.value ?? 0);
+      const stock =
+        Number(
+          params.value ??
+            0,
+        );
 
       let color = "success";
 
       if (stock <= 0) {
         color = "error";
-      } else if (stock <= 5) {
+      } else if (
+        stock <= 5
+      ) {
         color = "warning";
       }
 
@@ -379,9 +422,14 @@ export default function ProductoTable({
           sx={{
             width: "100%",
             height: "100%",
+
             display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
+
+            justifyContent:
+              "center",
+
+            alignItems:
+              "center",
           }}
         >
           <Chip
@@ -452,13 +500,13 @@ export default function ProductoTable({
       const costo =
         Number(
           row.precio_costo ??
-          0,
+            0,
         );
 
       const venta =
         Number(
           row.precio_venta ??
-          0,
+            0,
         );
 
       if (costo <= 0) {
@@ -482,7 +530,7 @@ export default function ProductoTable({
 
   /*
    * ===================================
-   * DETALLES
+   * CÓDIGO
    * ===================================
    */
 
@@ -503,13 +551,21 @@ export default function ProductoTable({
         sx={{
           width: "100%",
           height: "100%",
+
           display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
+
+          justifyContent:
+            "center",
+
+          alignItems:
+            "center",
         }}
       >
         <Chip
-          label={params.value || "-"}
+          label={
+            params.value ||
+            "-"
+          }
           size="small"
           variant="outlined"
           sx={{
@@ -524,25 +580,152 @@ export default function ProductoTable({
     ),
   };
 
+  /*
+   * ===================================
+   * VARIANTES
+   * ===================================
+   *
+   * IMPORTANTE:
+   *
+   * Un producto simple posee una
+   * variante interna en la base de
+   * datos para mantener un único
+   * motor de stock.
+   *
+   * Esa variante no debe mostrarse
+   * ni contarse en la interfaz.
+   * ===================================
+   */
+
   const columnaVariantes = {
     field: "variantes",
     headerName: "Variantes",
 
-    width: 110,
-    minWidth: 110,
-
-    type: "number",
+    width: 145,
+    minWidth: 145,
 
     align: "center",
     headerAlign: "center",
 
+    /*
+     * Para ordenar:
+     *
+     * producto simple = 0
+     * producto con variantes =
+     * cantidad real.
+     */
+
     valueGetter: (
       value,
-    ) =>
-      Number(
+      row,
+    ) => {
+      if (
+        !productoUsaVariantes(
+          row,
+        )
+      ) {
+        return 0;
+      }
+
+      return Number(
         value ?? 0,
-      ),
+      );
+    },
+
+    renderCell: (
+      params,
+    ) => {
+      const usaVariantes =
+        productoUsaVariantes(
+          params.row,
+        );
+
+      /*
+       * PRODUCTO SIMPLE
+       */
+
+      if (!usaVariantes) {
+        return (
+          <Box
+            sx={{
+              width: "100%",
+              height: "100%",
+
+              display: "flex",
+
+              justifyContent:
+                "center",
+
+              alignItems:
+                "center",
+            }}
+          >
+            <Chip
+              label="Sin variantes"
+              size="small"
+              variant="outlined"
+              color="default"
+              sx={{
+                fontWeight: 600,
+              }}
+            />
+          </Box>
+        );
+      }
+
+      /*
+       * PRODUCTO CON VARIANTES
+       */
+
+      const cantidad =
+        Number(
+          params.row
+            ?.variantes ??
+            0,
+        );
+
+      return (
+        <Box
+          sx={{
+            width: "100%",
+            height: "100%",
+
+            display: "flex",
+
+            justifyContent:
+              "center",
+
+            alignItems:
+              "center",
+          }}
+        >
+          <Chip
+            label={
+              cantidad === 1
+                ? "1 variante"
+                : `${cantidad} variantes`
+            }
+            size="small"
+            color={
+              cantidad > 0
+                ? "primary"
+                : "default"
+            }
+            variant="outlined"
+            sx={{
+              fontWeight: 600,
+            }}
+          />
+        </Box>
+      );
+    },
   };
+
+  /*
+   * ===================================
+   * CATEGORÍA
+   * ===================================
+   */
 
   const columnaCategoria = {
     field: "categoria",
@@ -559,9 +742,14 @@ export default function ProductoTable({
         sx={{
           width: "100%",
           height: "100%",
+
           display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
+
+          justifyContent:
+            "center",
+
+          alignItems:
+            "center",
         }}
       >
         <Typography
@@ -575,11 +763,18 @@ export default function ProductoTable({
             width: "100%",
           }}
         >
-          {params.value || "-"}
+          {params.value ||
+            "-"}
         </Typography>
       </Box>
     ),
   };
+
+  /*
+   * ===================================
+   * MARCA
+   * ===================================
+   */
 
   const columnaMarca = {
     field: "marca",
@@ -596,9 +791,14 @@ export default function ProductoTable({
         sx={{
           width: "100%",
           height: "100%",
+
           display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
+
+          justifyContent:
+            "center",
+
+          alignItems:
+            "center",
         }}
       >
         <Typography
@@ -612,11 +812,18 @@ export default function ProductoTable({
             width: "100%",
           }}
         >
-          {params.value || "-"}
+          {params.value ||
+            "-"}
         </Typography>
       </Box>
     ),
   };
+
+  /*
+   * ===================================
+   * PROVEEDOR
+   * ===================================
+   */
 
   const columnaProveedor = {
     field: "proveedor",
@@ -633,9 +840,14 @@ export default function ProductoTable({
         sx={{
           width: "100%",
           height: "100%",
+
           display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
+
+          justifyContent:
+            "center",
+
+          alignItems:
+            "center",
         }}
       >
         <Typography
@@ -649,7 +861,8 @@ export default function ProductoTable({
             width: "100%",
           }}
         >
-          {params.value || "-"}
+          {params.value ||
+            "-"}
         </Typography>
       </Box>
     ),
@@ -657,7 +870,7 @@ export default function ProductoTable({
 
   /*
    * ===================================
-   * ORDEN
+   * ORDEN COLUMNAS
    * ===================================
    */
 
@@ -671,11 +884,13 @@ export default function ProductoTable({
 
     ...(esAdministrador
       ? [
-        columnaPrecioCosto,
-        columnaPrecioVenta,
-        columnaMargen,
-      ]
-      : [columnaPrecioVenta]),
+          columnaPrecioCosto,
+          columnaPrecioVenta,
+          columnaMargen,
+        ]
+      : [
+          columnaPrecioVenta,
+        ]),
 
     // Información secundaria
     columnaCodigo,
@@ -684,6 +899,12 @@ export default function ProductoTable({
     columnaMarca,
     columnaProveedor,
   ];
+
+  /*
+   * ===================================
+   * TABLA
+   * ===================================
+   */
 
   return (
     <DataGrid
@@ -700,6 +921,7 @@ export default function ProductoTable({
        * antes estaba en 64 y
        * recortaba nombre + código.
        */
+
       rowHeight={78}
 
       columnHeaderHeight={58}
@@ -713,11 +935,11 @@ export default function ProductoTable({
       initialState={{
         pagination: {
           paginationModel:
-          {
-            page: 0,
-            pageSize:
-              10,
-          },
+            {
+              page: 0,
+              pageSize:
+                10,
+            },
         },
       }}
 
@@ -735,19 +957,20 @@ export default function ProductoTable({
         /*
          * HEADER
          */
+
         "& .MuiDataGrid-columnHeaders":
-        {
-          backgroundColor:
-            "background.default",
-        },
+          {
+            backgroundColor:
+              "background.default",
+          },
 
         "& .MuiDataGrid-columnHeaderTitle":
-        {
-          fontWeight: 700,
+          {
+            fontWeight: 700,
 
-          color:
-            "text.primary",
-        },
+            color:
+              "text.primary",
+          },
 
         /*
          * CELDAS
@@ -756,41 +979,44 @@ export default function ProductoTable({
          * global porque rompía
          * la celda Producto.
          */
+
         "& .MuiDataGrid-cell":
-        {
-          borderColor:
-            "divider",
-        },
+          {
+            borderColor:
+              "divider",
+          },
 
         /*
          * FILAS
          */
+
         "& .MuiDataGrid-row":
-        {
-          cursor:
-            "pointer",
-        },
+          {
+            cursor:
+              "pointer",
+          },
 
         "& .MuiDataGrid-row:hover":
-        {
-          backgroundColor:
-            "action.hover",
-        },
+          {
+            backgroundColor:
+              "action.hover",
+          },
 
         /*
          * QUITAMOS OUTLINE AL HACER CLICK
          */
+
         "& .MuiDataGrid-cell:focus":
-        {
-          outline:
-            "none",
-        },
+          {
+            outline:
+              "none",
+          },
 
         "& .MuiDataGrid-columnHeader:focus":
-        {
-          outline:
-            "none",
-        },
+          {
+            outline:
+              "none",
+          },
       }}
     />
   );

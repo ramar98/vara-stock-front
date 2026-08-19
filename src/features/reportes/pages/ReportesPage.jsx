@@ -104,6 +104,15 @@ function formatearFecha(valor) {
 }
 
 function obtenerVariante(item) {
+  if (
+    Number(
+      item?.usa_variantes ??
+        1,
+    ) === 0
+  ) {
+    return "Producto sin variantes";
+  }
+
   const partes = [
     item?.color,
     item?.talle,
@@ -313,8 +322,13 @@ export default function ReportesPage() {
       field: "codigo_barras",
       headerName: "Código de barras",
       width: 170,
-      valueGetter: (value) =>
-        value || "-",
+      valueGetter: (value, row) =>
+        Number(
+          row?.usa_variantes ??
+            1,
+        ) === 0
+          ? "-"
+          : value || "-",
     },
     {
       field: "stock_actual",
@@ -979,7 +993,7 @@ export default function ReportesPage() {
                   variant="body2"
                   color="text.secondary"
                 >
-                  Valor actual de cada variante a costo y precio de venta.
+                  Valor actual de cada producto y variante a costo y precio de venta.
                 </Typography>
               </Box>
 
@@ -1018,7 +1032,7 @@ export default function ReportesPage() {
 
             {productosStock.length === 0 ? (
               <Alert severity="info">
-                No hay variantes registradas en el inventario.
+                No hay productos registrados en el inventario.
               </Alert>
             ) : (
               <DataGrid

@@ -117,6 +117,21 @@ function obtenerConfiguracionMovimiento(
 function obtenerVariante(
   elemento,
 ) {
+  /*
+   * Producto simple.
+   * La variante interna existe solamente
+   * para mantener el motor de stock.
+   * No la exponemos al usuario.
+   */
+  if (
+    Number(
+      elemento?.usa_variantes ??
+        1,
+    ) === 0
+  ) {
+    return "Producto sin variantes";
+  }
+
   const partes = [
     elemento?.color,
     elemento?.talle,
@@ -845,7 +860,7 @@ export default function Dashboard() {
             ).toLocaleString(
               "es-AR",
             )}
-            subtitle="Variantes sin unidades disponibles"
+            subtitle="Productos o variantes sin unidades disponibles"
             icon={
               <WarningAmberIcon />
             }
@@ -1032,7 +1047,7 @@ export default function Dashboard() {
                       mt: 0.4,
                     }}
                   >
-                    Variantes que requieren reposición.
+                    Productos y variantes que requieren reposición.
                   </Typography>
                 </Box>
 

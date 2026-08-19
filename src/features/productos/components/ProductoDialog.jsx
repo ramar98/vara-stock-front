@@ -28,6 +28,12 @@ const estadoInicial = {
 
   precio_costo_default: "",
   precio_venta_default: "",
+
+  /*
+   * 1 = producto con variantes
+   * 0 = producto simple
+   */
+  usa_variantes: "1",
 };
 
 export default function ProductoDialog({
@@ -102,6 +108,21 @@ export default function ProductoDialog({
         precio_venta_default:
           producto.precio_venta_default ??
           "",
+
+        /*
+         * Si es un producto viejo que todavía
+         * no tiene usa_variantes, asumimos
+         * que usa variantes.
+         */
+
+        usa_variantes:
+          producto.usa_variantes != null
+            ? String(
+                Number(
+                  producto.usa_variantes,
+                ),
+              )
+            : "1",
       });
     } else {
       setFormulario({
@@ -164,9 +185,13 @@ export default function ProductoDialog({
 
     /*
      * Código
+     *
+     * Solo se valida al editar.
+     * Al crear lo genera el backend.
      */
 
     if (
+      editando &&
       !formulario.codigo.trim()
     ) {
       nuevosErrores.codigo =
@@ -182,6 +207,34 @@ export default function ProductoDialog({
     ) {
       nuevosErrores.nombre =
         "El nombre es obligatorio.";
+    }
+
+    /*
+     * Categoría
+     *
+     * Obligatoria para crear
+     * el código automático.
+     */
+
+    if (
+      !formulario.categoria_id
+    ) {
+      nuevosErrores.categoria_id =
+        "Seleccioná una categoría.";
+    }
+
+    /*
+     * Tipo de producto
+     */
+
+    if (
+      formulario.usa_variantes !==
+        "1" &&
+      formulario.usa_variantes !==
+        "0"
+    ) {
+      nuevosErrores.usa_variantes =
+        "Seleccioná el tipo de producto.";
     }
 
     /*
@@ -226,6 +279,28 @@ export default function ProductoDialog({
         "Ingresá un precio de venta válido.";
     }
 
+    /*
+     * Precio de venta menor al costo
+     */
+
+    if (
+      formulario.precio_costo_default !==
+        "" &&
+      formulario.precio_venta_default !==
+        "" &&
+      !Number.isNaN(
+        precioCosto,
+      ) &&
+      !Number.isNaN(
+        precioVenta,
+      ) &&
+      precioVenta <
+        precioCosto
+    ) {
+      nuevosErrores.precio_venta_default =
+        "El precio de venta no puede ser menor al precio de costo.";
+    }
+
     setErrores(
       nuevosErrores,
     );
@@ -250,9 +325,6 @@ export default function ProductoDialog({
       }
 
       const datos = {
-        codigo:
-          formulario.codigo.trim(),
-
         nombre:
           formulario.nombre.trim(),
 
@@ -262,11 +334,9 @@ export default function ProductoDialog({
           null,
 
         categoria_id:
-          formulario.categoria_id
-            ? Number(
-                formulario.categoria_id,
-              )
-            : null,
+          Number(
+            formulario.categoria_id,
+          ),
 
         marca_id:
           formulario.marca_id
@@ -283,7 +353,7 @@ export default function ProductoDialog({
             : null,
 
         /*
-         * PRECIOS BASE DEL PRODUCTO
+         * PRECIOS BASE
          */
 
         precio_costo_default:
@@ -295,7 +365,27 @@ export default function ProductoDialog({
           Number(
             formulario.precio_venta_default,
           ),
+
+        /*
+         * TIPO DE PRODUCTO
+         */
+
+        usa_variantes:
+          formulario.usa_variantes ===
+          "1",
       };
+
+      /*
+       * El código solamente se envía
+       * cuando estamos editando.
+       *
+       * Al crear, el backend lo genera.
+       */
+
+      if (editando) {
+        datos.codigo =
+          formulario.codigo.trim();
+      }
 
       await onGuardar(
         datos,
@@ -388,34 +478,48 @@ export default function ProductoDialog({
             {/* CÓDIGO */}
             {/* ======================= */}
 
-            <Grid
-              size={{
-                xs: 12,
-                md: 4,
-              }}
-            >
-              <TextField
-                fullWidth
-                required
-                label="Código"
-                name="codigo"
-                value={
-                  formulario.codigo
-                }
-                onChange={
-                  cambiarCampo
-                }
-                error={Boolean(
-                  errores.codigo,
-                )}
-                helperText={
-                  errores.codigo
-                }
-                disabled={
-                  loading
-                }
-              />
-            </Grid>
+            {editando && (
+              <Grid
+                size={{
+                  xs: 12,
+                  md: 4,
+                }}
+              >
+                <TextField
+                  fullWidth
+                  label="Código"
+                  name="codigo"
+                  value={
+                    formulario.codigo
+                  }
+                  error={Boolean(
+                    errores.codigo,
+                  )}
+                  helperText={
+                    errores.codigo ||
+                    "Código generado automáticamente al crear el producto."
+                  }
+                  disabled
+                />
+              </Grid>
+            )}
+
+            {!editando && (
+              <Grid
+                size={{
+                  xs: 12,
+                  md: 4,
+                }}
+              >
+                <TextField
+                  fullWidth
+                  label="Código"
+                  value="Automático"
+                  disabled
+                  helperText="Se generará según la categoría. Ej.: PAN-007"
+                />
+              </Grid>
+            )}
 
             {/* ======================= */}
             {/* NOMBRE */}
@@ -490,6 +594,7 @@ export default function ProductoDialog({
               <TextField
                 select
                 fullWidth
+                required
                 label="Categoría"
                 name="categoria_id"
                 value={
@@ -498,12 +603,23 @@ export default function ProductoDialog({
                 onChange={
                   cambiarCampo
                 }
+                error={Boolean(
+                  errores.categoria_id,
+                )}
+                helperText={
+                  errores.categoria_id ||
+                  (
+                    editando
+                      ? "Categoría del producto."
+                      : "El código se generará usando las primeras 3 letras de esta categoría."
+                  )
+                }
                 disabled={
                   loading
                 }
               >
                 <MenuItem value="">
-                  Sin categoría
+                  Seleccionar categoría
                 </MenuItem>
 
                 {categorias.map(
@@ -625,6 +741,74 @@ export default function ProductoDialog({
             </Grid>
 
             {/* ======================= */}
+            {/* TIPO DE PRODUCTO */}
+            {/* ======================= */}
+
+            <Grid
+              size={{
+                xs: 12,
+              }}
+            >
+              <Typography
+                variant="subtitle1"
+                sx={{
+                  mt: 1,
+                  fontWeight: 700,
+                }}
+              >
+                Tipo de producto
+              </Typography>
+
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{
+                  mt: 0.5,
+                  mb: 1.5,
+                }}
+              >
+                Indicá si el producto necesita variantes como color y talle.
+              </Typography>
+
+              <TextField
+                select
+                fullWidth
+                required
+                label="Tipo de producto"
+                name="usa_variantes"
+                value={
+                  formulario.usa_variantes
+                }
+                onChange={
+                  cambiarCampo
+                }
+                error={Boolean(
+                  errores.usa_variantes,
+                )}
+                helperText={
+                  errores.usa_variantes ||
+                  (
+                    formulario.usa_variantes ===
+                    "1"
+                      ? "Podrás crear variantes con diferentes colores, talles y precios."
+                      : "El producto se manejará directamente, sin seleccionar color ni talle."
+                  )
+                }
+                disabled={
+                  loading
+                }
+              >
+                <MenuItem value="1">
+                  Con variantes
+                </MenuItem>
+
+                <MenuItem value="0">
+                  Sin variantes
+                </MenuItem>
+              </TextField>
+            </Grid>
+
+            {/* ======================= */}
             {/* PRECIOS BASE */}
             {/* ======================= */}
 
@@ -640,7 +824,10 @@ export default function ProductoDialog({
                   fontWeight: 700,
                 }}
               >
-                Precios predeterminados
+                {formulario.usa_variantes ===
+                "1"
+                  ? "Precios predeterminados"
+                  : "Precios del producto"}
               </Typography>
 
               <Typography
@@ -650,14 +837,16 @@ export default function ProductoDialog({
                   mt: 0.5,
                 }}
               >
-                Estos valores se utilizarán
-                automáticamente al crear
-                nuevas variantes del
-                producto.
+                {formulario.usa_variantes ===
+                "1"
+                  ? "Estos valores se utilizarán automáticamente al crear nuevas variantes del producto."
+                  : "Estos serán los precios de costo y venta del producto."}
               </Typography>
             </Grid>
 
+            {/* ======================= */}
             {/* PRECIO COSTO */}
+            {/* ======================= */}
 
             <Grid
               size={{
@@ -682,7 +871,12 @@ export default function ProductoDialog({
                 )}
                 helperText={
                   errores.precio_costo_default ||
-                  "Precio de costo predeterminado para nuevas variantes."
+                  (
+                    formulario.usa_variantes ===
+                    "1"
+                      ? "Precio de costo predeterminado para nuevas variantes."
+                      : "Precio de costo del producto."
+                  )
                 }
                 disabled={
                   loading
@@ -690,13 +884,17 @@ export default function ProductoDialog({
                 slotProps={{
                   htmlInput: {
                     min: 0,
-                    step: "0.01",
+
+                    step:
+                      "0.01",
                   },
                 }}
               />
             </Grid>
 
+            {/* ======================= */}
             {/* PRECIO VENTA */}
+            {/* ======================= */}
 
             <Grid
               size={{
@@ -721,7 +919,12 @@ export default function ProductoDialog({
                 )}
                 helperText={
                   errores.precio_venta_default ||
-                  "Precio de venta predeterminado para nuevas variantes."
+                  (
+                    formulario.usa_variantes ===
+                    "1"
+                      ? "Precio de venta predeterminado para nuevas variantes."
+                      : "Precio de venta del producto."
+                  )
                 }
                 disabled={
                   loading
@@ -729,7 +932,9 @@ export default function ProductoDialog({
                 slotProps={{
                   htmlInput: {
                     min: 0,
-                    step: "0.01",
+
+                    step:
+                      "0.01",
                   },
                 }}
               />

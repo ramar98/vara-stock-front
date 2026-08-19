@@ -90,6 +90,27 @@ function obtenerProductoRespuesta(
   return null;
 }
 
+function formatearMoneda(valor) {
+  if (
+    valor === undefined ||
+    valor === null ||
+    valor === ""
+  ) {
+    return "-";
+  }
+
+  return new Intl.NumberFormat(
+    "es-AR",
+    {
+      style: "currency",
+      currency: "ARS",
+      maximumFractionDigits: 2,
+    },
+  ).format(
+    Number(valor),
+  );
+}
+
 export default function ProductoDetalleDialog({
   open,
   producto,
@@ -99,14 +120,6 @@ export default function ProductoDetalleDialog({
   esAdministrador = false,
   esVendedor = false,
 
-  /*
-   * 0 = Información
-   * 1 = Variantes
-   * 2 = Imágenes
-   * 3 = Movimientos
-   */
-  tabInicial = 0,
-
   onClose,
   onEditar,
   onNotificar,
@@ -114,9 +127,7 @@ export default function ProductoDetalleDialog({
   const [
     tabActual,
     setTabActual,
-  ] = useState(
-    tabInicial,
-  );
+  ] = useState(0);
 
   const [
     detalle,
@@ -137,9 +148,9 @@ export default function ProductoDetalleDialog({
     producto?.id;
 
   /*
-   * ==================================
-   * CARGAR PRODUCTO
-   * ==================================
+   * =====================================
+   * CARGAR DETALLE
+   * =====================================
    */
 
   useEffect(() => {
@@ -156,20 +167,7 @@ export default function ProductoDetalleDialog({
 
         setError("");
 
-        /*
-         * IMPORTANTE:
-         * antes estaba:
-         *
-         * setTabActual(0)
-         *
-         * y siempre abría Información.
-         *
-         * Ahora respetamos la pestaña
-         * solicitada desde ProductoPage.
-         */
-        setTabActual(
-          tabInicial,
-        );
+        setTabActual(0);
 
         try {
           const respuesta =
@@ -182,9 +180,7 @@ export default function ProductoDetalleDialog({
               respuesta,
             );
 
-          setDetalle(
-            datos,
-          );
+          setDetalle(datos);
         } catch (
           errorPeticion
         ) {
@@ -193,13 +189,13 @@ export default function ProductoDetalleDialog({
               ?.response
               ?.data
               ?.message ||
-              errorPeticion
-                ?.response
-                ?.data
-                ?.error ||
-              errorPeticion
-                ?.message ||
-              "No se pudo cargar el producto.",
+            errorPeticion
+              ?.response
+              ?.data
+              ?.error ||
+            errorPeticion
+              ?.message ||
+            "No se pudo cargar el producto.",
           );
         } finally {
           setCargando(
@@ -212,13 +208,12 @@ export default function ProductoDetalleDialog({
   }, [
     open,
     productoId,
-    tabInicial,
   ]);
 
   /*
-   * ==================================
+   * =====================================
    * LIMPIAR AL CERRAR
-   * ==================================
+   * =====================================
    */
 
   useEffect(() => {
@@ -231,13 +226,66 @@ export default function ProductoDetalleDialog({
     }
   }, [open]);
 
+  /*
+   * =====================================
+   * PRODUCTO A MOSTRAR
+   * =====================================
+   */
+
   const productoMostrado =
     detalle || producto;
 
   /*
-   * ==================================
-   * CAMBIAR PESTAÑA
-   * ==================================
+   * =====================================
+   * TIPO DE PRODUCTO
+   * =====================================
+   */
+
+  const usaVariantes =
+    Number(
+      productoMostrado
+        ?.usa_variantes ??
+        1,
+    ) === 1;
+
+  /*
+   * =====================================
+   * ÍNDICES DE PESTAÑAS
+   * =====================================
+   *
+   * CON VARIANTES
+   *
+   * 0 Información
+   * 1 Variantes
+   * 2 Imágenes
+   * 3 Movimientos
+   *
+   * SIN VARIANTES
+   *
+   * 0 Información
+   * 1 Imágenes
+   * 2 Movimientos
+   */
+
+  const indiceVariantes =
+    usaVariantes
+      ? 1
+      : null;
+
+  const indiceImagenes =
+    usaVariantes
+      ? 2
+      : 1;
+
+  const indiceMovimientos =
+    usaVariantes
+      ? 3
+      : 2;
+
+  /*
+   * =====================================
+   * CAMBIAR TAB
+   * =====================================
    */
 
   const cambiarTab = (
@@ -250,9 +298,9 @@ export default function ProductoDetalleDialog({
   };
 
   /*
-   * ==================================
+   * =====================================
    * CERRAR
-   * ==================================
+   * =====================================
    */
 
   const cerrar = () => {
@@ -262,9 +310,9 @@ export default function ProductoDetalleDialog({
   };
 
   /*
-   * ==================================
-   * EDITAR DATOS GENERALES
-   * ==================================
+   * =====================================
+   * EDITAR
+   * =====================================
    */
 
   const editar = () => {
@@ -280,45 +328,29 @@ export default function ProductoDetalleDialog({
     );
   };
 
+  /*
+   * =====================================
+   * RENDER
+   * =====================================
+   */
+
   return (
     <Dialog
       open={open}
       onClose={cerrar}
       fullWidth
       maxWidth="lg"
-      PaperProps={{
-        sx: {
-          maxHeight:
-            "92vh",
-
-          display:
-            "flex",
-
-          flexDirection:
-            "column",
-
-          overflow:
-            "hidden",
-
-          borderRadius: 3,
-        },
-      }}
     >
-      {/* ======================= */}
-      {/* TITULO */}
-      {/* ======================= */}
+      {/* ===================== */}
+      {/* TÍTULO */}
+      {/* ===================== */}
 
-      <DialogTitle
-        sx={{
-          flexShrink: 0,
-        }}
-      >
+      <DialogTitle>
         <Box>
           <Typography
             variant="h6"
             sx={{
-              fontWeight:
-                700,
+              fontWeight: 700,
             }}
           >
             {productoMostrado
@@ -343,30 +375,17 @@ export default function ProductoDetalleDialog({
 
       <Divider />
 
-      {/* ======================= */}
-      {/* CONTENIDO */}
-      {/* ======================= */}
+      <DialogContent>
+        {/* ===================== */}
+        {/* CARGANDO */}
+        {/* ===================== */}
 
-      <DialogContent
-        sx={{
-          flex:
-            "1 1 auto",
-
-          overflowY:
-            "auto",
-
-          overflowX:
-            "hidden",
-        }}
-      >
         {cargando && (
           <Box
             sx={{
-              minHeight:
-                300,
+              minHeight: 300,
 
-              display:
-                "flex",
+              display: "flex",
 
               justifyContent:
                 "center",
@@ -379,6 +398,10 @@ export default function ProductoDetalleDialog({
           </Box>
         )}
 
+        {/* ===================== */}
+        {/* ERROR */}
+        {/* ===================== */}
+
         {!cargando &&
           error && (
             <Alert severity="error">
@@ -386,13 +409,17 @@ export default function ProductoDetalleDialog({
             </Alert>
           )}
 
+        {/* ===================== */}
+        {/* CONTENIDO */}
+        {/* ===================== */}
+
         {!cargando &&
           !error &&
           productoMostrado && (
             <>
-              {/* ================= */}
-              {/* TABS */}
-              {/* ================= */}
+              {/* ===================== */}
+              {/* PESTAÑAS */}
+              {/* ===================== */}
 
               <Tabs
                 value={
@@ -411,20 +438,30 @@ export default function ProductoDetalleDialog({
                     "divider",
                 }}
               >
-                <Tab label="Información" />
+                <Tab
+                  label="Información"
+                />
 
-                <Tab label="Variantes" />
+                {usaVariantes && (
+                  <Tab
+                    label="Variantes"
+                  />
+                )}
 
-                <Tab label="Imágenes" />
+                <Tab
+                  label="Imágenes"
+                />
 
                 {esAdministrador && (
-                  <Tab label="Movimientos" />
+                  <Tab
+                    label="Movimientos"
+                  />
                 )}
               </Tabs>
 
-              {/* ================= */}
+              {/* ===================== */}
               {/* INFORMACIÓN */}
-              {/* ================= */}
+              {/* ===================== */}
 
               <TabPanel
                 value={
@@ -436,7 +473,9 @@ export default function ProductoDetalleDialog({
                   container
                   spacing={3}
                 >
-                  {/* PRIORIDAD */}
+                  {/* ===================== */}
+                  {/* PRECIO VENTA */}
+                  {/* ===================== */}
 
                   <Grid
                     size={{
@@ -447,32 +486,22 @@ export default function ProductoDetalleDialog({
                     <CampoDetalle
                       etiqueta="Precio de venta"
                       valor={
-                        productoMostrado
-                          .precio_venta !=
-                        null
-                          ? new Intl.NumberFormat(
-                              "es-AR",
-                              {
-                                style:
-                                  "currency",
-
-                                currency:
-                                  "ARS",
-
-                                maximumFractionDigits:
-                                  2,
-                              },
-                            ).format(
-                              Number(
-                                productoMostrado
-                                  .precio_venta ??
-                                  0,
-                              ),
+                        usaVariantes
+                          ? formatearMoneda(
+                              productoMostrado
+                                .precio_venta,
                             )
-                          : "-"
+                          : formatearMoneda(
+                              productoMostrado
+                                .precio_venta_default,
+                            )
                       }
                     />
                   </Grid>
+
+                  {/* ===================== */}
+                  {/* STOCK TOTAL */}
+                  {/* ===================== */}
 
                   <Grid
                     size={{
@@ -485,10 +514,35 @@ export default function ProductoDetalleDialog({
                       valor={
                         productoMostrado
                           .stock ??
-                        0
+                        (
+                          Array.isArray(
+                            productoMostrado
+                              .variantes,
+                          )
+                            ? productoMostrado
+                              .variantes
+                              .reduce(
+                                (
+                                  total,
+                                  variante,
+                                ) =>
+                                  total +
+                                  Number(
+                                    variante
+                                      .stock_actual ??
+                                      0,
+                                  ),
+                                0,
+                              )
+                            : 0
+                        )
                       }
                     />
                   </Grid>
+
+                  {/* ===================== */}
+                  {/* TIPO PRODUCTO */}
+                  {/* ===================== */}
 
                   <Grid
                     size={{
@@ -497,25 +551,123 @@ export default function ProductoDetalleDialog({
                     }}
                   >
                     <CampoDetalle
-                      etiqueta="Variantes"
+                      etiqueta="Tipo de producto"
                       valor={
-                        Array.isArray(
-                          productoMostrado
-                            .variantes,
-                        )
-                          ? productoMostrado
-                              .variantes
-                              .length
-                          : Number(
-                              productoMostrado
-                                .variantes ??
-                                0,
-                            )
+                        usaVariantes
+                          ? "Con variantes"
+                          : "Sin variantes"
                       }
                     />
                   </Grid>
 
-                  {/* DATOS GENERALES */}
+                  {/* ===================== */}
+                  {/* COSTO SOLO ADMIN */}
+                  {/* ===================== */}
+
+                  {esAdministrador && (
+                    <Grid
+                      size={{
+                        xs: 12,
+                        md: 4,
+                      }}
+                    >
+                      <CampoDetalle
+                        etiqueta={
+                          usaVariantes
+                            ? "Costo predeterminado"
+                            : "Precio de costo"
+                        }
+                        valor={
+                          formatearMoneda(
+                            productoMostrado
+                              .precio_costo_default,
+                          )
+                        }
+                      />
+                    </Grid>
+                  )}
+
+                  {/* ===================== */}
+                  {/* PRECIO BASE VENTA */}
+                  {/* SOLO CON VARIANTES */}
+                  {/* ===================== */}
+
+                  {usaVariantes && (
+                    <Grid
+                      size={{
+                        xs: 12,
+                        md: 4,
+                      }}
+                    >
+                      <CampoDetalle
+                        etiqueta="Venta predeterminada"
+                        valor={
+                          formatearMoneda(
+                            productoMostrado
+                              .precio_venta_default,
+                          )
+                        }
+                      />
+                    </Grid>
+                  )}
+
+                  {/* ===================== */}
+                  {/* CANTIDAD VARIANTES */}
+                  {/* SOLO PRODUCTOS CON */}
+                  {/* VARIANTES */}
+                  {/* ===================== */}
+
+                  {usaVariantes && (
+                    <Grid
+                      size={{
+                        xs: 12,
+                        md: 4,
+                      }}
+                    >
+                      <CampoDetalle
+                        etiqueta="Variantes"
+                        valor={
+                          Array.isArray(
+                            productoMostrado
+                              .variantes,
+                          )
+                            ? productoMostrado
+                              .variantes
+                              .length
+                            : Number(
+                                productoMostrado
+                                  .variantes ??
+                                  0,
+                              )
+                        }
+                      />
+                    </Grid>
+                  )}
+
+                  {/* ===================== */}
+                  {/* MENSAJE PRODUCTO */}
+                  {/* SIMPLE */}
+                  {/* ===================== */}
+
+                  {!usaVariantes && (
+                    <Grid
+                      size={{
+                        xs: 12,
+                      }}
+                    >
+                      <Alert
+                        severity="info"
+                      >
+                        Este producto no utiliza variantes. El stock,
+                        los ingresos y las ventas se gestionan
+                        directamente sobre el producto.
+                      </Alert>
+                    </Grid>
+                  )}
+
+                  {/* ===================== */}
+                  {/* CÓDIGO */}
+                  {/* ===================== */}
 
                   <Grid
                     size={{
@@ -532,6 +684,10 @@ export default function ProductoDetalleDialog({
                     />
                   </Grid>
 
+                  {/* ===================== */}
+                  {/* NOMBRE */}
+                  {/* ===================== */}
+
                   <Grid
                     size={{
                       xs: 12,
@@ -546,6 +702,10 @@ export default function ProductoDetalleDialog({
                       }
                     />
                   </Grid>
+
+                  {/* ===================== */}
+                  {/* CATEGORÍA */}
+                  {/* ===================== */}
 
                   <Grid
                     size={{
@@ -562,6 +722,10 @@ export default function ProductoDetalleDialog({
                     />
                   </Grid>
 
+                  {/* ===================== */}
+                  {/* MARCA */}
+                  {/* ===================== */}
+
                   <Grid
                     size={{
                       xs: 12,
@@ -576,6 +740,11 @@ export default function ProductoDetalleDialog({
                       }
                     />
                   </Grid>
+
+                  {/* ===================== */}
+                  {/* PROVEEDOR */}
+                  {/* SOLO ADMIN */}
+                  {/* ===================== */}
 
                   {esAdministrador && (
                     <Grid
@@ -594,6 +763,10 @@ export default function ProductoDetalleDialog({
                     </Grid>
                   )}
 
+                  {/* ===================== */}
+                  {/* DESCRIPCIÓN */}
+                  {/* ===================== */}
+
                   <Grid
                     size={{
                       xs: 12,
@@ -607,6 +780,10 @@ export default function ProductoDetalleDialog({
                       }
                     />
                   </Grid>
+
+                  {/* ===================== */}
+                  {/* ESTADO */}
+                  {/* ===================== */}
 
                   <Grid
                     size={{
@@ -628,75 +805,92 @@ export default function ProductoDetalleDialog({
                 </Grid>
               </TabPanel>
 
-              {/* ================= */}
+              {/* ===================== */}
               {/* VARIANTES */}
-              {/* ================= */}
+              {/* SOLO SI USA VARIANTES */}
+              {/* ===================== */}
 
-              <TabPanel
-                value={
-                  tabActual
-                }
-                index={1}
-              >
-                <VariantesPanel
-                  producto={
-                    productoMostrado
+              {usaVariantes && (
+                <TabPanel
+                  value={
+                    tabActual
                   }
-                  colores={
-                    colores
+                  index={
+                    indiceVariantes
                   }
-                  talles={
-                    talles
-                  }
-                  esAdministrador={
-                    esAdministrador
-                  }
-                  esVendedor={
-                    esVendedor
-                  }
-                  onNotificar={
-                    onNotificar
-                  }
-                />
-              </TabPanel>
+                >
+                  <VariantesPanel
+                    producto={
+                      productoMostrado
+                    }
 
-              {/* ================= */}
+                    colores={
+                      colores
+                    }
+
+                    talles={
+                      talles
+                    }
+
+                    esAdministrador={
+                      esAdministrador
+                    }
+
+                    esVendedor={
+                      esVendedor
+                    }
+
+                    onNotificar={
+                      onNotificar
+                    }
+                  />
+                </TabPanel>
+              )}
+
+              {/* ===================== */}
               {/* IMÁGENES */}
-              {/* ================= */}
+              {/* ===================== */}
 
               <TabPanel
                 value={
                   tabActual
                 }
-                index={2}
+                index={
+                  indiceImagenes
+                }
               >
                 <ImagenesPanel
                   producto={
                     productoMostrado
                   }
+
                   esAdministrador={
                     esAdministrador
                   }
+
                   esVendedor={
                     esVendedor
                   }
+
                   onNotificar={
                     onNotificar
                   }
                 />
               </TabPanel>
 
-              {/* ================= */}
+              {/* ===================== */}
               {/* MOVIMIENTOS */}
-              {/* SOLO ADMIN */}
-              {/* ================= */}
+              {/* SOLO ADMINISTRADOR */}
+              {/* ===================== */}
 
               {esAdministrador && (
                 <TabPanel
                   value={
                     tabActual
                   }
-                  index={3}
+                  index={
+                    indiceMovimientos
+                  }
                 >
                   <MovimientosPanel
                     producto={
@@ -709,9 +903,9 @@ export default function ProductoDetalleDialog({
           )}
       </DialogContent>
 
-      {/* ======================= */}
+      {/* ===================== */}
       {/* ACCIONES */}
-      {/* ======================= */}
+      {/* ===================== */}
 
       <DialogActions
         sx={{
@@ -719,21 +913,10 @@ export default function ProductoDetalleDialog({
 
           py: 2,
 
-          flexShrink: 0,
-
           justifyContent:
             "flex-end",
 
           gap: 1,
-
-          borderTop:
-            "1px solid",
-
-          borderColor:
-            "divider",
-
-          backgroundColor:
-            "background.paper",
         }}
       >
         <Button
@@ -749,8 +932,7 @@ export default function ProductoDetalleDialog({
         </Button>
 
         {esAdministrador &&
-          tabActual ===
-            0 && (
+          tabActual === 0 && (
             <Button
               variant="contained"
               onClick={
