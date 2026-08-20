@@ -113,6 +113,51 @@ function formatearFecha(
 
 /*
  * =====================================
+ * FORMATEAR CANTIDADES
+ * =====================================
+ *
+ * Permite mostrar correctamente:
+ *
+ * 1
+ * 0,25
+ * 0,850
+ * 1,250
+ * 98,650
+ *
+ * sin forzar decimales cuando no
+ * son necesarios.
+ */
+
+function formatearCantidad(
+  valor,
+) {
+  const numero =
+    Number(
+      valor ?? 0,
+    );
+
+  if (
+    !Number.isFinite(
+      numero,
+    )
+  ) {
+    return "0";
+  }
+
+  return numero.toLocaleString(
+    "es-AR",
+    {
+      minimumFractionDigits:
+        0,
+
+      maximumFractionDigits:
+        3,
+    },
+  );
+}
+
+/*
+ * =====================================
  * PRODUCTO SIN VARIANTES
  * =====================================
  */
@@ -643,6 +688,12 @@ export default function AjustesStockPage() {
           ),
     },
 
+    /*
+     * =================================
+     * STOCK ANTERIOR
+     * =================================
+     */
+
     {
       field:
         "stock_anterior",
@@ -665,7 +716,19 @@ export default function AjustesStockPage() {
             value ??
               0,
           ),
+
+      valueFormatter:
+        (value) =>
+          formatearCantidad(
+            value,
+          ),
     },
+
+    /*
+     * =================================
+     * STOCK NUEVO
+     * =================================
+     */
 
     {
       field:
@@ -689,7 +752,19 @@ export default function AjustesStockPage() {
             value ??
               0,
           ),
+
+      valueFormatter:
+        (value) =>
+          formatearCantidad(
+            value,
+          ),
     },
+
+    /*
+     * =================================
+     * DIFERENCIA
+     * =================================
+     */
 
     {
       field:
@@ -717,13 +792,16 @@ export default function AjustesStockPage() {
                 0,
             );
 
+          const cantidadFormateada =
+            formatearCantidad(
+              diferencia,
+            );
+
           const texto =
             diferencia >
-            0
-              ? `+${diferencia}`
-              : String(
-                  diferencia,
-                );
+              0
+              ? `+${cantidadFormateada}`
+              : cantidadFormateada;
 
           return (
             <Chip
@@ -1030,7 +1108,11 @@ export default function AjustesStockPage() {
                 md: 2,
               }}
             >
-              <Stack spacing={1}>
+              <Stack
+                spacing={
+                  1
+                }
+              >
                 <Button
                   fullWidth
                   variant="outlined"
@@ -1047,7 +1129,9 @@ export default function AjustesStockPage() {
                   startIcon={
                     actualizandoAjustes ? (
                       <CircularProgress
-                        size={17}
+                        size={
+                          17
+                        }
                       />
                     ) : (
                       <RefreshIcon />
@@ -1060,7 +1144,9 @@ export default function AjustesStockPage() {
                     actualizandoAjustes
                   }
                 >
-                  Actualizar
+                  {actualizandoAjustes
+                    ? "Actualizando..."
+                    : "Actualizar"}
                 </Button>
               </Stack>
             </Grid>
@@ -1096,12 +1182,16 @@ export default function AjustesStockPage() {
 
           {!cargandoAjustes &&
             errorAjustes && (
-              <Alert severity="error">
+              <Alert
+                severity="error"
+              >
                 {errorAjustes
-                  ?.response?.data
+                  ?.response
+                  ?.data
                   ?.message ||
                   errorAjustes
-                    ?.response?.data
+                    ?.response
+                    ?.data
                     ?.error ||
                   errorAjustes
                     ?.message ||
@@ -1113,7 +1203,9 @@ export default function AjustesStockPage() {
             !errorAjustes &&
             ajustes.length ===
               0 && (
-              <Alert severity="info">
+              <Alert
+                severity="info"
+              >
                 No hay ajustes registrados para los filtros seleccionados.
               </Alert>
             )}

@@ -245,7 +245,9 @@ export default function AjusteStockDialog({
       setErroresFormulario(
         (estadoActual) => ({
           ...estadoActual,
-          [name]: "",
+
+          [name]:
+            "",
         }),
       );
     }
@@ -345,11 +347,6 @@ export default function AjusteStockDialog({
          * =================================
          * PRODUCTO SIN VARIANTES
          * =================================
-         *
-         * El backend creó una variante
-         * interna automáticamente.
-         *
-         * La seleccionamos sin mostrarla.
          */
 
         if (
@@ -377,15 +374,6 @@ export default function AjusteStockDialog({
                   varianteInterna.id,
                 ),
 
-              /*
-               * Dejamos como valor inicial
-               * el stock actual.
-               *
-               * Después el usuario debe
-               * modificarlo para registrar
-               * el ajuste.
-               */
-
               nuevo_stock:
                 String(
                   varianteInterna
@@ -396,7 +384,7 @@ export default function AjusteStockDialog({
           );
         }
       } catch (
-      errorPeticion
+        errorPeticion
       ) {
         setVariantes([]);
 
@@ -502,16 +490,26 @@ export default function AjusteStockDialog({
         formulario.nuevo_stock,
       );
 
+    /*
+     * Permitimos stock decimal.
+     *
+     * Ejemplos:
+     * 0
+     * 0.250
+     * 0.850
+     * 10.500
+     */
+
     if (
       formulario.nuevo_stock ===
         "" ||
-      !Number.isInteger(
+      !Number.isFinite(
         nuevoStock,
       ) ||
       nuevoStock < 0
     ) {
       nuevosErrores.nuevo_stock =
-        "Ingresá un stock entero mayor o igual a cero.";
+        "Ingresá un stock válido mayor o igual a cero.";
     }
 
     if (
@@ -568,15 +566,6 @@ export default function AjusteStockDialog({
       }
 
       await onGuardar({
-        /*
-         * IMPORTANTE:
-         *
-         * Para un producto simple
-         * enviamos igualmente variante_id.
-         *
-         * Es el ID de la variante interna.
-         */
-
         variante_id:
           Number(
             formulario.variante_id,
@@ -647,10 +636,6 @@ export default function AjusteStockDialog({
       </DialogTitle>
 
       <DialogContent dividers>
-        {/* ======================= */}
-        {/* ERRORES */}
-        {/* ======================= */}
-
         {error && (
           <Alert
             severity="error"
@@ -706,10 +691,6 @@ export default function AjusteStockDialog({
           container
           spacing={2}
         >
-          {/* ======================= */}
-          {/* PRODUCTO */}
-          {/* ======================= */}
-
           <Grid
             size={{
               xs: 12,
@@ -773,12 +754,6 @@ export default function AjusteStockDialog({
             </TextField>
           </Grid>
 
-          {/* ======================= */}
-          {/* VARIANTE */}
-          {/* SOLO PRODUCTOS CON */}
-          {/* VARIANTES */}
-          {/* ======================= */}
-
           {(
             !productoSeleccionado ||
             usaVariantes
@@ -841,10 +816,6 @@ export default function AjusteStockDialog({
             </Grid>
           )}
 
-          {/* ======================= */}
-          {/* PRODUCTO SIMPLE */}
-          {/* ======================= */}
-
           {productoSeleccionado &&
             !usaVariantes && (
               <Grid
@@ -860,10 +831,6 @@ export default function AjusteStockDialog({
                 </Alert>
               </Grid>
             )}
-
-          {/* ======================= */}
-          {/* STOCK ACTUAL */}
-          {/* ======================= */}
 
           <Grid
             size={{
@@ -888,10 +855,6 @@ export default function AjusteStockDialog({
               }
             />
           </Grid>
-
-          {/* ======================= */}
-          {/* NUEVO STOCK */}
-          {/* ======================= */}
 
           <Grid
             size={{
@@ -926,15 +889,11 @@ export default function AjusteStockDialog({
               slotProps={{
                 htmlInput: {
                   min: 0,
-                  step: 1,
+                  step: "0.001",
                 },
               }}
             />
           </Grid>
-
-          {/* ======================= */}
-          {/* MOTIVO */}
-          {/* ======================= */}
 
           <Grid
             size={{
@@ -985,10 +944,6 @@ export default function AjusteStockDialog({
             </TextField>
           </Grid>
 
-          {/* ======================= */}
-          {/* DIFERENCIA */}
-          {/* ======================= */}
-
           <Grid
             size={{
               xs: 12,
@@ -1004,10 +959,6 @@ export default function AjusteStockDialog({
               }
             />
           </Grid>
-
-          {/* ======================= */}
-          {/* OBSERVACIÓN */}
-          {/* ======================= */}
 
           <Grid size={12}>
             <TextField

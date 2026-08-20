@@ -29,11 +29,63 @@ import useDashboard from "../../features/dashboard/hooks/useDashboard";
 import StatCard from "../../components/common/StatCard";
 
 function formatearMoneda(valor) {
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    maximumFractionDigits: 0,
-  }).format(Number(valor ?? 0));
+  return new Intl.NumberFormat(
+    "es-AR",
+    {
+      style: "currency",
+      currency: "ARS",
+      maximumFractionDigits: 0,
+    },
+  ).format(
+    Number(
+      valor ?? 0,
+    ),
+  );
+}
+
+/*
+ * =====================================
+ * FORMATEAR CANTIDADES
+ * =====================================
+ *
+ * Se utiliza para stock, movimientos
+ * y cualquier cantidad física.
+ *
+ * Ejemplos:
+ *
+ * 1
+ * 0,25
+ * 0,85
+ * 1,25
+ * 98,65
+ * 111,9
+ */
+
+function formatearCantidad(
+  valor,
+) {
+  const numero =
+    Number(
+      valor ?? 0,
+    );
+
+  if (
+    !Number.isFinite(
+      numero,
+    )
+  ) {
+    return "0";
+  }
+
+  return new Intl.NumberFormat(
+    "es-AR",
+    {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 3,
+    },
+  ).format(
+    numero,
+  );
 }
 
 function formatearFecha(
@@ -44,7 +96,10 @@ function formatearFecha(
     return "-";
   }
 
-  const fecha = new Date(valor);
+  const fecha =
+    new Date(
+      valor,
+    );
 
   if (
     Number.isNaN(
@@ -57,7 +112,8 @@ function formatearFecha(
   return new Intl.DateTimeFormat(
     "es-AR",
     {
-      dateStyle: "short",
+      dateStyle:
+        "short",
 
       ...(incluirHora
         ? {
@@ -66,7 +122,9 @@ function formatearFecha(
           }
         : {}),
     },
-  ).format(fecha);
+  ).format(
+    fecha,
+  );
 }
 
 function obtenerConfiguracionMovimiento(
@@ -74,33 +132,54 @@ function obtenerConfiguracionMovimiento(
 ) {
   const configuraciones = {
     INGRESO: {
-      etiqueta: "Ingreso",
-      color: "success",
-      signo: "+",
+      etiqueta:
+        "Ingreso",
+
+      color:
+        "success",
+
+      signo:
+        "+",
     },
 
     VENTA: {
-      etiqueta: "Venta",
-      color: "error",
-      signo: "-",
+      etiqueta:
+        "Venta",
+
+      color:
+        "error",
+
+      signo:
+        "-",
     },
 
     AJUSTE: {
-      etiqueta: "Ajuste",
-      color: "warning",
-      signo: "",
+      etiqueta:
+        "Ajuste",
+
+      color:
+        "warning",
+
+      signo:
+        "",
     },
 
     DEVOLUCION: {
       etiqueta:
         "Devolución",
-      color: "info",
-      signo: "+",
+
+      color:
+        "info",
+
+      signo:
+        "+",
     },
   };
 
   return (
-    configuraciones[tipo] ?? {
+    configuraciones[
+      tipo
+    ] ?? {
       etiqueta:
         tipo ||
         "Movimiento",
@@ -119,10 +198,12 @@ function obtenerVariante(
 ) {
   /*
    * Producto simple.
+   *
    * La variante interna existe solamente
    * para mantener el motor de stock.
    * No la exponemos al usuario.
    */
+
   if (
     Number(
       elemento?.usa_variantes ??
@@ -135,10 +216,13 @@ function obtenerVariante(
   const partes = [
     elemento?.color,
     elemento?.talle,
-  ].filter(Boolean);
+  ].filter(
+    Boolean,
+  );
 
   if (
-    partes.length > 0
+    partes.length >
+    0
   ) {
     return partes.join(
       " / ",
@@ -169,7 +253,9 @@ function obtenerEtiquetaMetodoPago(
   };
 
   return (
-    etiquetas[valor] ||
+    etiquetas[
+      valor
+    ] ||
     valor ||
     "-"
   );
@@ -193,7 +279,9 @@ function obtenerColorMetodoPago(
   };
 
   return (
-    colores[valor] ||
+    colores[
+      valor
+    ] ||
     "default"
   );
 }
@@ -204,7 +292,9 @@ function GraficoVentas({
   const maximo =
     Math.max(
       ...datos.map(
-        (item) =>
+        (
+          item,
+        ) =>
           Number(
             item.total ??
               0,
@@ -214,19 +304,28 @@ function GraficoVentas({
     );
 
   if (
-    datos.length === 0
+    datos.length ===
+    0
   ) {
     return (
-      <Alert severity="info">
+      <Alert
+        severity="info"
+      >
         Todavía no hay ventas para mostrar en el gráfico.
       </Alert>
     );
   }
 
   return (
-    <Stack spacing={2.25}>
+    <Stack
+      spacing={
+        2.25
+      }
+    >
       {datos.map(
-        (item) => {
+        (
+          item,
+        ) => {
           const total =
             Number(
               item.total ??
@@ -235,8 +334,10 @@ function GraficoVentas({
 
           const porcentaje =
             Math.min(
-              (total /
-                maximo) *
+              (
+                total /
+                maximo
+              ) *
                 100,
               100,
             );
@@ -249,23 +350,30 @@ function GraficoVentas({
             >
               <Stack
                 direction={{
-                  xs: "column",
-                  sm: "row",
+                  xs:
+                    "column",
+
+                  sm:
+                    "row",
                 }}
-                spacing={1}
+                spacing={
+                  1
+                }
                 sx={{
-                  mb: 0.8,
+                  mb:
+                    0.8,
 
                   justifyContent:
                     "space-between",
 
-                  alignItems: {
-                    xs:
-                      "flex-start",
+                  alignItems:
+                    {
+                      xs:
+                        "flex-start",
 
-                    sm:
-                      "center",
-                  },
+                      sm:
+                        "center",
+                    },
                 }}
               >
                 <Typography
@@ -283,7 +391,9 @@ function GraficoVentas({
 
                 <Stack
                   direction="row"
-                  spacing={2}
+                  spacing={
+                    2
+                  }
                   sx={{
                     alignItems:
                       "center",
@@ -320,7 +430,8 @@ function GraficoVentas({
                   porcentaje
                 }
                 sx={{
-                  height: 9,
+                  height:
+                    9,
 
                   borderRadius:
                     10,
@@ -354,20 +465,30 @@ function EncabezadoSeccion({
   return (
     <Stack
       direction={{
-        xs: "column",
-        sm: "row",
+        xs:
+          "column",
+
+        sm:
+          "row",
       }}
-      spacing={2}
+      spacing={
+        2
+      }
       sx={{
-        mb: 3,
+        mb:
+          3,
 
         justifyContent:
           "space-between",
 
-        alignItems: {
-          xs: "stretch",
-          sm: "center",
-        },
+        alignItems:
+          {
+            xs:
+              "stretch",
+
+            sm:
+              "center",
+          },
       }}
     >
       <Box>
@@ -378,21 +499,28 @@ function EncabezadoSeccion({
               700,
           }}
         >
-          {titulo}
+          {
+            titulo
+          }
         </Typography>
 
         <Typography
           variant="body2"
           color="text.secondary"
           sx={{
-            mt: 0.4,
+            mt:
+              0.4,
           }}
         >
-          {descripcion}
+          {
+            descripcion
+          }
         </Typography>
       </Box>
 
-      {accion}
+      {
+        accion
+      }
     </Stack>
   );
 }
@@ -401,7 +529,9 @@ export default function Dashboard() {
   const [
     diasGrafico,
     setDiasGrafico,
-  ] = useState(7);
+  ] = useState(
+    7,
+  );
 
   const {
     resumen,
@@ -418,11 +548,13 @@ export default function Dashboard() {
   });
 
   const ultimosMovimientos =
-    resumen.ultimos_movimientos ??
+    resumen
+      .ultimos_movimientos ??
     [];
 
   const ultimasVentas =
-    resumen.ultimas_ventas ??
+    resumen
+      .ultimas_ventas ??
     [];
 
   if (
@@ -457,12 +589,14 @@ export default function Dashboard() {
 
       <Card
         sx={{
-          mb: 3,
+          mb:
+            3,
 
           overflow:
             "hidden",
 
-          border: 0,
+          border:
+            0,
 
           color:
             "#FFFFFF",
@@ -537,15 +671,21 @@ export default function Dashboard() {
               1,
 
             p: {
-              xs: 3,
-              md: 4,
+              xs:
+                3,
+
+              md:
+                4,
             },
 
             "&:last-child":
               {
                 pb: {
-                  xs: 3,
-                  md: 4,
+                  xs:
+                    3,
+
+                  md:
+                    4,
                 },
               },
           }}
@@ -570,7 +710,8 @@ export default function Dashboard() {
             <Typography
               variant="h4"
               sx={{
-                mt: 0.5,
+                mt:
+                  0.5,
 
                 color:
                   "#FFFFFF",
@@ -588,7 +729,8 @@ export default function Dashboard() {
             <Typography
               variant="body2"
               sx={{
-                mt: 1,
+                mt:
+                  1,
 
                 maxWidth:
                   620,
@@ -600,8 +742,11 @@ export default function Dashboard() {
                   1.7,
 
                 pr: {
-                  xs: 0,
-                  sm: 6,
+                  xs:
+                    0,
+
+                  sm:
+                    6,
                 },
               }}
             >
@@ -624,13 +769,19 @@ export default function Dashboard() {
                 "absolute",
 
               right: {
-                xs: 20,
-                md: 28,
+                xs:
+                  20,
+
+                md:
+                  28,
               },
 
               bottom: {
-                xs: 20,
-                md: 28,
+                xs:
+                  20,
+
+                md:
+                  28,
               },
 
               minWidth:
@@ -642,7 +793,8 @@ export default function Dashboard() {
               height:
                 38,
 
-              p: 0,
+              p:
+                0,
 
               borderRadius:
                 "50%",
@@ -688,11 +840,15 @@ export default function Dashboard() {
           >
             {actualizandoDashboard ? (
               <CircularProgress
-                size={17}
+                size={
+                  17
+                }
                 color="inherit"
               />
             ) : (
-              <RefreshIcon fontSize="small" />
+              <RefreshIcon
+                fontSize="small"
+              />
             )}
           </Button>
         </CardContent>
@@ -706,7 +862,8 @@ export default function Dashboard() {
         <Alert
           severity="error"
           sx={{
-            mb: 3,
+            mb:
+              3,
           }}
         >
           {errorDashboard
@@ -724,22 +881,32 @@ export default function Dashboard() {
       )}
 
       {/* ====================== */}
-      {/* MÉTRICAS COMERCIALES */}
+      {/* MÉTRICAS */}
       {/* ====================== */}
 
       <Grid
         container
-        columnSpacing={3}
-        rowSpacing={3}
+        columnSpacing={
+          3
+        }
+        rowSpacing={
+          3
+        }
         sx={{
-          mb: 3,
+          mb:
+            3,
         }}
       >
         <Grid
           size={{
-            xs: 12,
-            sm: 6,
-            lg: 4,
+            xs:
+              12,
+
+            sm:
+              6,
+
+            lg:
+              4,
           }}
         >
           <StatCard
@@ -757,9 +924,14 @@ export default function Dashboard() {
 
         <Grid
           size={{
-            xs: 12,
-            sm: 6,
-            lg: 4,
+            xs:
+              12,
+
+            sm:
+              6,
+
+            lg:
+              4,
           }}
         >
           <StatCard
@@ -777,9 +949,14 @@ export default function Dashboard() {
 
         <Grid
           size={{
-            xs: 12,
-            sm: 6,
-            lg: 4,
+            xs:
+              12,
+
+            sm:
+              6,
+
+            lg:
+              4,
           }}
         >
           <StatCard
@@ -795,15 +972,16 @@ export default function Dashboard() {
           />
         </Grid>
 
-        {/* ====================== */}
-        {/* MÉTRICAS DE INVENTARIO */}
-        {/* ====================== */}
-
         <Grid
           size={{
-            xs: 12,
-            sm: 6,
-            lg: 4,
+            xs:
+              12,
+
+            sm:
+              6,
+
+            lg:
+              4,
           }}
         >
           <StatCard
@@ -822,22 +1000,28 @@ export default function Dashboard() {
           />
         </Grid>
 
+        {/* ================================= */}
+        {/* STOCK TOTAL */}
+        {/* ================================= */}
+
         <Grid
           size={{
-            xs: 12,
-            sm: 6,
-            lg: 4,
+            xs:
+              12,
+
+            sm:
+              6,
+
+            lg:
+              4,
           }}
         >
           <StatCard
-            title="Unidades en stock"
-            value={Number(
-              resumen.unidades_stock ??
-                0,
-            ).toLocaleString(
-              "es-AR",
+            title="Stock total"
+            value={formatearCantidad(
+              resumen.unidades_stock,
             )}
-            subtitle="Unidades disponibles en inventario"
+            subtitle="Cantidad disponible en inventario"
             icon={
               <WarehouseIcon />
             }
@@ -847,9 +1031,14 @@ export default function Dashboard() {
 
         <Grid
           size={{
-            xs: 12,
-            sm: 6,
-            lg: 4,
+            xs:
+              12,
+
+            sm:
+              6,
+
+            lg:
+              4,
           }}
         >
           <StatCard
@@ -860,7 +1049,7 @@ export default function Dashboard() {
             ).toLocaleString(
               "es-AR",
             )}
-            subtitle="Productos o variantes sin unidades disponibles"
+            subtitle="Productos o variantes sin stock disponible"
             icon={
               <WarningAmberIcon />
             }
@@ -875,16 +1064,24 @@ export default function Dashboard() {
 
       <Grid
         container
-        columnSpacing={3}
-        rowSpacing={3}
+        columnSpacing={
+          3
+        }
+        rowSpacing={
+          3
+        }
         sx={{
-          mb: 3,
+          mb:
+            3,
         }}
       >
         <Grid
           size={{
-            xs: 12,
-            lg: 8,
+            xs:
+              12,
+
+            lg:
+              8,
           }}
         >
           <Card
@@ -899,15 +1096,21 @@ export default function Dashboard() {
             <CardContent
               sx={{
                 p: {
-                  xs: 2.5,
-                  md: 3,
+                  xs:
+                    2.5,
+
+                  md:
+                    3,
                 },
 
                 "&:last-child":
                   {
                     pb: {
-                      xs: 2.5,
-                      md: 3,
+                      xs:
+                        2.5,
+
+                      md:
+                        3,
                     },
                   },
               }}
@@ -940,31 +1143,41 @@ export default function Dashboard() {
                     }}
                   >
                     <MenuItem
-                      value={7}
+                      value={
+                        7
+                      }
                     >
                       Últimos 7 días
                     </MenuItem>
 
                     <MenuItem
-                      value={15}
+                      value={
+                        15
+                      }
                     >
                       Últimos 15 días
                     </MenuItem>
 
                     <MenuItem
-                      value={30}
+                      value={
+                        30
+                      }
                     >
                       Últimos 30 días
                     </MenuItem>
 
                     <MenuItem
-                      value={60}
+                      value={
+                        60
+                      }
                     >
                       Últimos 60 días
                     </MenuItem>
 
                     <MenuItem
-                      value={90}
+                      value={
+                        90
+                      }
                     >
                       Últimos 90 días
                     </MenuItem>
@@ -982,13 +1195,16 @@ export default function Dashboard() {
         </Grid>
 
         {/* ====================== */}
-        {/* STOCK BAJO DETALLADO */}
+        {/* STOCK BAJO */}
         {/* ====================== */}
 
         <Grid
           size={{
-            xs: 12,
-            lg: 4,
+            xs:
+              12,
+
+            lg:
+              4,
           }}
         >
           <Card
@@ -1003,24 +1219,33 @@ export default function Dashboard() {
             <CardContent
               sx={{
                 p: {
-                  xs: 2.5,
-                  md: 3,
+                  xs:
+                    2.5,
+
+                  md:
+                    3,
                 },
 
                 "&:last-child":
                   {
                     pb: {
-                      xs: 2.5,
-                      md: 3,
+                      xs:
+                        2.5,
+
+                      md:
+                        3,
                     },
                   },
               }}
             >
               <Stack
                 direction="row"
-                spacing={2}
+                spacing={
+                  2
+                }
                 sx={{
-                  mb: 2.5,
+                  mb:
+                    2.5,
 
                   justifyContent:
                     "space-between",
@@ -1044,7 +1269,8 @@ export default function Dashboard() {
                     variant="body2"
                     color="text.secondary"
                     sx={{
-                      mt: 0.4,
+                      mt:
+                        0.4,
                     }}
                   >
                     Productos y variantes que requieren reposición.
@@ -1067,14 +1293,20 @@ export default function Dashboard() {
 
               {productosStockBajo.length ===
               0 ? (
-                <Alert severity="success">
+                <Alert
+                  severity="success"
+                >
                   No hay productos con stock bajo.
                 </Alert>
               ) : (
                 <Stack
-                  spacing={1.6}
+                  spacing={
+                    1.6
+                  }
                   divider={
-                    <Divider flexItem />
+                    <Divider
+                      flexItem
+                    />
                   }
                 >
                   {productosStockBajo
@@ -1091,7 +1323,8 @@ export default function Dashboard() {
                             producto.variante_id
                           }
                           sx={{
-                            py: 0.3,
+                            py:
+                              0.3,
                           }}
                         >
                           <Stack
@@ -1139,12 +1372,10 @@ export default function Dashboard() {
                               size="small"
                               color="error"
                               variant="outlined"
-                              label={`${Number(
-                                producto.stock_actual ??
-                                  0,
-                              )} / ${Number(
-                                producto.stock_minimo ??
-                                  0,
+                              label={`${formatearCantidad(
+                                producto.stock_actual,
+                              )} / ${formatearCantidad(
+                                producto.stock_minimo,
                               )}`}
                             />
                           </Stack>
@@ -1164,15 +1395,24 @@ export default function Dashboard() {
 
       <Grid
         container
-        columnSpacing={3}
-        rowSpacing={3}
+        columnSpacing={
+          3
+        }
+        rowSpacing={
+          3
+        }
       >
+        {/* ====================== */}
         {/* ÚLTIMOS MOVIMIENTOS */}
+        {/* ====================== */}
 
         <Grid
           size={{
-            xs: 12,
-            lg: 7,
+            xs:
+              12,
+
+            lg:
+              7,
           }}
         >
           <Card
@@ -1187,15 +1427,21 @@ export default function Dashboard() {
             <CardContent
               sx={{
                 p: {
-                  xs: 2.5,
-                  md: 3,
+                  xs:
+                    2.5,
+
+                  md:
+                    3,
                 },
 
                 "&:last-child":
                   {
                     pb: {
-                      xs: 2.5,
-                      md: 3,
+                      xs:
+                        2.5,
+
+                      md:
+                        3,
                     },
                   },
               }}
@@ -1207,14 +1453,20 @@ export default function Dashboard() {
 
               {ultimosMovimientos.length ===
               0 ? (
-                <Alert severity="info">
+                <Alert
+                  severity="info"
+                >
                   Todavía no hay movimientos de stock.
                 </Alert>
               ) : (
                 <Stack
-                  spacing={1.7}
+                  spacing={
+                    1.7
+                  }
                   divider={
-                    <Divider flexItem />
+                    <Divider
+                      flexItem
+                    />
                   }
                 >
                   {ultimosMovimientos.map(
@@ -1242,7 +1494,8 @@ export default function Dashboard() {
                             1.5
                           }
                           sx={{
-                            py: 0.2,
+                            py:
+                              0.2,
 
                             justifyContent:
                               "space-between",
@@ -1287,7 +1540,9 @@ export default function Dashboard() {
 
                           <Stack
                             direction="row"
-                            spacing={1}
+                            spacing={
+                              1
+                            }
                             sx={{
                               alignItems:
                                 "center",
@@ -1308,7 +1563,7 @@ export default function Dashboard() {
                               variant="body2"
                               sx={{
                                 minWidth:
-                                  34,
+                                  50,
 
                                 textAlign:
                                   "right",
@@ -1321,9 +1576,8 @@ export default function Dashboard() {
                                 configuracion.signo
                               }
 
-                              {Number(
-                                movimiento.cantidad ??
-                                  0,
+                              {formatearCantidad(
+                                movimiento.cantidad,
                               )}
                             </Typography>
                           </Stack>
@@ -1337,12 +1591,17 @@ export default function Dashboard() {
           </Card>
         </Grid>
 
+        {/* ====================== */}
         {/* ÚLTIMAS VENTAS */}
+        {/* ====================== */}
 
         <Grid
           size={{
-            xs: 12,
-            lg: 5,
+            xs:
+              12,
+
+            lg:
+              5,
           }}
         >
           <Card
@@ -1357,15 +1616,21 @@ export default function Dashboard() {
             <CardContent
               sx={{
                 p: {
-                  xs: 2.5,
-                  md: 3,
+                  xs:
+                    2.5,
+
+                  md:
+                    3,
                 },
 
                 "&:last-child":
                   {
                     pb: {
-                      xs: 2.5,
-                      md: 3,
+                      xs:
+                        2.5,
+
+                      md:
+                        3,
                     },
                   },
               }}
@@ -1377,18 +1642,26 @@ export default function Dashboard() {
 
               {ultimasVentas.length ===
               0 ? (
-                <Alert severity="info">
+                <Alert
+                  severity="info"
+                >
                   Todavía no hay ventas registradas.
                 </Alert>
               ) : (
                 <Stack
-                  spacing={1.7}
+                  spacing={
+                    1.7
+                  }
                   divider={
-                    <Divider flexItem />
+                    <Divider
+                      flexItem
+                    />
                   }
                 >
                   {ultimasVentas.map(
-                    (venta) => (
+                    (
+                      venta,
+                    ) => (
                       <Stack
                         key={
                           venta.id
@@ -1404,7 +1677,8 @@ export default function Dashboard() {
                           1.5
                         }
                         sx={{
-                          py: 0.2,
+                          py:
+                            0.2,
 
                           justifyContent:
                             "space-between",

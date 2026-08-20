@@ -40,15 +40,33 @@ function formatearMoneda(valor) {
   }).format(Number(valor ?? 0));
 }
 
+function formatearCantidad(valor) {
+  return Number(
+    valor ?? 0,
+  ).toLocaleString(
+    "es-AR",
+    {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 3,
+    },
+  );
+}
+
 function formatearFecha(valor) {
   if (!valor) {
     return "-";
   }
 
-  const fechaTexto = String(valor).slice(0, 10);
+  const fechaTexto = String(valor).slice(
+    0,
+    10,
+  );
 
-  const [anio, mes, dia] =
-    fechaTexto.split("-");
+  const [
+    anio,
+    mes,
+    dia,
+  ] = fechaTexto.split("-");
 
   if (!anio || !mes || !dia) {
     return "-";
@@ -57,12 +75,18 @@ function formatearFecha(valor) {
   return `${dia}/${mes}/${anio}`;
 }
 
-function obtenerDatosProductos(respuesta) {
+function obtenerDatosProductos(
+  respuesta,
+) {
   if (Array.isArray(respuesta)) {
     return respuesta;
   }
 
-  if (Array.isArray(respuesta?.data)) {
+  if (
+    Array.isArray(
+      respuesta?.data,
+    )
+  ) {
     return respuesta.data;
   }
 
@@ -70,12 +94,14 @@ function obtenerDatosProductos(respuesta) {
 }
 
 export default function IngresosPage() {
-  const [filtros, setFiltros] =
-    useState({
-      fechaDesde: "",
-      fechaHasta: "",
-      proveedorId: "",
-    });
+  const [
+    filtros,
+    setFiltros,
+  ] = useState({
+    fechaDesde: "",
+    fechaHasta: "",
+    proveedorId: "",
+  });
 
   const {
     ingresos,
@@ -89,14 +115,19 @@ export default function IngresosPage() {
 
   const {
     data: catalogos,
-    isLoading: cargandoCatalogos,
-    isError: errorCatalogos,
+    isLoading:
+      cargandoCatalogos,
+    isError:
+      errorCatalogos,
   } = useCatalogosProductos();
 
   const {
-    data: productosRespuesta,
-    isLoading: cargandoProductos,
-    isError: errorProductos,
+    data:
+      productosRespuesta,
+    isLoading:
+      cargandoProductos,
+    isError:
+      errorProductos,
   } = useProductos();
 
   /*
@@ -106,19 +137,24 @@ export default function IngresosPage() {
    */
 
   const proveedores =
-    catalogos?.proveedores ?? [];
+    catalogos?.proveedores ??
+    [];
 
   const categorias =
-    catalogos?.categorias ?? [];
+    catalogos?.categorias ??
+    [];
 
   const marcas =
-    catalogos?.marcas ?? [];
+    catalogos?.marcas ??
+    [];
 
   const colores =
-    catalogos?.colores ?? [];
+    catalogos?.colores ??
+    [];
 
   const talles =
-    catalogos?.talles ?? [];
+    catalogos?.talles ??
+    [];
 
   const productos = useMemo(
     () =>
@@ -168,14 +204,17 @@ export default function IngresosPage() {
     });
   };
 
-  const cerrarNotificacion = () => {
-    setNotificacion(
-      (estadoActual) => ({
-        ...estadoActual,
-        open: false,
-      }),
-    );
-  };
+  const cerrarNotificacion =
+    () => {
+      setNotificacion(
+        (
+          estadoActual,
+        ) => ({
+          ...estadoActual,
+          open: false,
+        }),
+      );
+    };
 
   /*
    * ==================================
@@ -183,23 +222,32 @@ export default function IngresosPage() {
    * ==================================
    */
 
-  const cambiarFiltro = (event) => {
-    const { name, value } =
-      event.target;
+  const cambiarFiltro = (
+    event,
+  ) => {
+    const {
+      name,
+      value,
+    } = event.target;
 
-    setFiltros((estadoActual) => ({
-      ...estadoActual,
-      [name]: value,
-    }));
+    setFiltros(
+      (
+        estadoActual,
+      ) => ({
+        ...estadoActual,
+        [name]: value,
+      }),
+    );
   };
 
-  const limpiarFiltros = () => {
-    setFiltros({
-      fechaDesde: "",
-      fechaHasta: "",
-      proveedorId: "",
-    });
-  };
+  const limpiarFiltros =
+    () => {
+      setFiltros({
+        fechaDesde: "",
+        fechaHasta: "",
+        proveedorId: "",
+      });
+    };
 
   /*
    * ==================================
@@ -207,50 +255,83 @@ export default function IngresosPage() {
    * ==================================
    */
 
-  const abrirNuevoIngreso = () => {
-    setErrorFormulario("");
-    setErroresFormulario([]);
-    setDialogIngresoAbierto(true);
-  };
-
-  const cerrarNuevoIngreso = () => {
-    if (registrandoIngreso) {
-      return;
-    }
-
-    setDialogIngresoAbierto(false);
-    setErrorFormulario("");
-    setErroresFormulario([]);
-  };
-
-  const guardarIngreso = async (
-    datos,
-  ) => {
-    setErrorFormulario("");
-    setErroresFormulario([]);
-
-    const resultado =
-      await registrarIngreso(datos);
-
-    if (!resultado.success) {
+  const abrirNuevoIngreso =
+    () => {
       setErrorFormulario(
-        resultado.message,
+        "",
       );
 
       setErroresFormulario(
-        resultado.errors ?? [],
+        [],
       );
 
-      return;
-    }
+      setDialogIngresoAbierto(
+        true,
+      );
+    };
 
-    setDialogIngresoAbierto(false);
+  const cerrarNuevoIngreso =
+    () => {
+      if (
+        registrandoIngreso
+      ) {
+        return;
+      }
 
-    mostrarNotificacion(
-      resultado.message,
-      "success",
-    );
-  };
+      setDialogIngresoAbierto(
+        false,
+      );
+
+      setErrorFormulario(
+        "",
+      );
+
+      setErroresFormulario(
+        [],
+      );
+    };
+
+  const guardarIngreso =
+    async (
+      datos,
+    ) => {
+      setErrorFormulario(
+        "",
+      );
+
+      setErroresFormulario(
+        [],
+      );
+
+      const resultado =
+        await registrarIngreso(
+          datos,
+        );
+
+      if (
+        !resultado.success
+      ) {
+        setErrorFormulario(
+          resultado.message,
+        );
+
+        setErroresFormulario(
+          resultado.errors ??
+            [],
+        );
+
+        return;
+      }
+
+      setDialogIngresoAbierto(
+        false,
+      );
+
+      mostrarNotificacion(
+        resultado.message,
+        "success",
+      );
+    };
 
   /*
    * ==================================
@@ -267,54 +348,83 @@ export default function IngresosPage() {
 
     {
       field: "fecha",
-      headerName: "Fecha",
+      headerName:
+        "Fecha",
       width: 130,
 
-      valueFormatter: (value) =>
-        formatearFecha(value),
+      valueFormatter: (
+        value,
+      ) =>
+        formatearFecha(
+          value,
+        ),
     },
 
     {
       field: "proveedor",
-      headerName: "Proveedor",
+      headerName:
+        "Proveedor",
       minWidth: 200,
       flex: 1,
 
-      valueGetter: (value) =>
+      valueGetter: (
+        value,
+      ) =>
         value || "-",
     },
 
     {
-      field: "numero_comprobante",
-      headerName: "Comprobante",
+      field:
+        "numero_comprobante",
+      headerName:
+        "Comprobante",
       width: 170,
 
-      valueGetter: (value) =>
+      valueGetter: (
+        value,
+      ) =>
         value || "-",
     },
 
     {
-      field: "cantidad_items",
-      headerName: "Ítems",
+      field:
+        "cantidad_items",
+      headerName:
+        "Ítems",
       width: 100,
       align: "center",
-      headerAlign: "center",
+      headerAlign:
+        "center",
 
-      valueGetter: (value) =>
-        Number(value ?? 0),
+      valueGetter: (
+        value,
+      ) =>
+        Number(
+          value ?? 0,
+        ),
     },
 
     {
-      field: "cantidad_unidades",
-      headerName: "Unidades",
-      width: 110,
-      align: "center",
-      headerAlign: "center",
+      field:
+        "cantidad_unidades",
 
-      renderCell: (params) => (
+      headerName:
+        "Cantidad",
+
+      width: 120,
+
+      align:
+        "center",
+
+      headerAlign:
+        "center",
+
+      renderCell: (
+        params,
+      ) => (
         <Chip
-          label={Number(
-            params.value ?? 0,
+          label={formatearCantidad(
+            params.value,
           )}
           size="small"
           color="primary"
@@ -325,34 +435,56 @@ export default function IngresosPage() {
 
     {
       field: "total",
-      headerName: "Total",
+      headerName:
+        "Total",
       width: 150,
       align: "right",
-      headerAlign: "right",
+      headerAlign:
+        "right",
 
-      valueFormatter: (value) =>
-        formatearMoneda(value),
+      valueFormatter: (
+        value,
+      ) =>
+        formatearMoneda(
+          value,
+        ),
     },
 
     {
-      field: "acciones",
-      type: "actions",
-      headerName: "Acciones",
-      width: 100,
-      align: "center",
-      headerAlign: "center",
+      field:
+        "acciones",
 
-      getActions: (params) => [
+      type:
+        "actions",
+
+      headerName:
+        "Acciones",
+
+      width: 100,
+
+      align:
+        "center",
+
+      headerAlign:
+        "center",
+
+      getActions: (
+        params,
+      ) => [
         <GridActionsCellItem
           key="detalle"
-          icon={<VisibilityIcon />}
+          icon={
+            <VisibilityIcon />
+          }
           label="Ver detalle"
           onClick={() =>
             setIngresoDetalleId(
               params.row.id,
             )
           }
-          showInMenu={false}
+          showInMenu={
+            false
+          }
         />,
       ],
     },
@@ -409,7 +541,9 @@ export default function IngresosPage() {
 
         <Button
           variant="contained"
-          startIcon={<AddIcon />}
+          startIcon={
+            <AddIcon />
+          }
           onClick={
             abrirNuevoIngreso
           }
@@ -421,11 +555,15 @@ export default function IngresosPage() {
         </Button>
       </Stack>
 
-      {(errorCatalogos ||
-        errorProductos) && (
+      {(
+        errorCatalogos ||
+        errorProductos
+      ) && (
         <Alert
           severity="warning"
-          sx={{ mb: 2 }}
+          sx={{
+            mb: 2,
+          }}
         >
           No se pudieron cargar todos los datos necesarios para registrar ingresos.
         </Alert>
@@ -435,13 +573,18 @@ export default function IngresosPage() {
       {/* FILTROS */}
       {/* ======================= */}
 
-      <Card sx={{ mb: 3 }}>
+      <Card
+        sx={{
+          mb: 3,
+        }}
+      >
         <CardContent>
           <Grid
             container
             spacing={2}
             sx={{
-              alignItems: "center",
+              alignItems:
+                "center",
             }}
           >
             <Grid
@@ -463,7 +606,8 @@ export default function IngresosPage() {
                 }
                 slotProps={{
                   inputLabel: {
-                    shrink: true,
+                    shrink:
+                      true,
                   },
                 }}
               />
@@ -488,7 +632,8 @@ export default function IngresosPage() {
                 }
                 slotProps={{
                   inputLabel: {
-                    shrink: true,
+                    shrink:
+                      true,
                   },
                 }}
               />
@@ -512,12 +657,16 @@ export default function IngresosPage() {
                   cambiarFiltro
                 }
               >
-                <MenuItem value="">
+                <MenuItem
+                  value=""
+                >
                   Todos los proveedores
                 </MenuItem>
 
                 {proveedores.map(
-                  (proveedor) => (
+                  (
+                    proveedor,
+                  ) => (
                     <MenuItem
                       key={
                         proveedor.id
@@ -535,22 +684,38 @@ export default function IngresosPage() {
               </TextField>
             </Grid>
 
-            <Grid size={12}>
+            <Grid
+              size={12}
+            >
               <Stack
                 direction={{
-                  xs: "column",
-                  sm: "row",
+                  xs:
+                    "column",
+
+                  sm:
+                    "row",
                 }}
-                spacing={1.5}
+                spacing={
+                  1.5
+                }
                 sx={{
-                  width: "100%",
+                  width:
+                    "100%",
+
                   justifyContent:
                     "flex-end",
-                  alignItems: {
-                    xs: "stretch",
-                    sm: "center",
-                  },
-                  flexWrap: "wrap",
+
+                  alignItems:
+                    {
+                      xs:
+                        "stretch",
+
+                      sm:
+                        "center",
+                    },
+
+                  flexWrap:
+                    "wrap",
                 }}
               >
                 <Button
@@ -559,9 +724,14 @@ export default function IngresosPage() {
                     limpiarFiltros
                   }
                   sx={{
-                    minWidth: 120,
-                    height: 42,
-                    flexShrink: 0,
+                    minWidth:
+                      120,
+
+                    height:
+                      42,
+
+                    flexShrink:
+                      0,
                   }}
                 >
                   Limpiar
@@ -572,7 +742,9 @@ export default function IngresosPage() {
                   startIcon={
                     actualizandoIngresos ? (
                       <CircularProgress
-                        size={17}
+                        size={
+                          17
+                        }
                         color="inherit"
                       />
                     ) : (
@@ -586,9 +758,14 @@ export default function IngresosPage() {
                     actualizandoIngresos
                   }
                   sx={{
-                    minWidth: 145,
-                    height: 42,
-                    flexShrink: 0,
+                    minWidth:
+                      145,
+
+                    height:
+                      42,
+
+                    flexShrink:
+                      0,
                   }}
                 >
                   {actualizandoIngresos
@@ -610,11 +787,17 @@ export default function IngresosPage() {
           {cargandoIngresos && (
             <Box
               sx={{
-                minHeight: 280,
-                display: "flex",
+                minHeight:
+                  280,
+
+                display:
+                  "flex",
+
                 justifyContent:
                   "center",
-                alignItems: "center",
+
+                alignItems:
+                  "center",
               }}
             >
               <CircularProgress />
@@ -623,12 +806,16 @@ export default function IngresosPage() {
 
           {!cargandoIngresos &&
             errorIngresos && (
-              <Alert severity="error">
+              <Alert
+                severity="error"
+              >
                 {errorIngresos
-                  ?.response?.data
+                  ?.response
+                  ?.data
                   ?.message ||
                   errorIngresos
-                    ?.response?.data
+                    ?.response
+                    ?.data
                     ?.error ||
                   errorIngresos
                     ?.message ||
@@ -640,7 +827,9 @@ export default function IngresosPage() {
             !errorIngresos &&
             ingresos.length ===
               0 && (
-              <Alert severity="info">
+              <Alert
+                severity="info"
+              >
                 No hay ingresos registrados para los filtros seleccionados.
               </Alert>
             )}
@@ -650,9 +839,15 @@ export default function IngresosPage() {
             ingresos.length >
               0 && (
               <DataGrid
-                rows={ingresos}
-                columns={columnas}
-                getRowId={(row) =>
+                rows={
+                  ingresos
+                }
+                columns={
+                  columnas
+                }
+                getRowId={(
+                  row,
+                ) =>
                   row.id
                 }
                 autoHeight
@@ -663,22 +858,30 @@ export default function IngresosPage() {
                   50,
                 ]}
                 initialState={{
-                  pagination: {
-                    paginationModel: {
-                      page: 0,
-                      pageSize: 10,
+                  pagination:
+                    {
+                      paginationModel:
+                        {
+                          page:
+                            0,
+
+                          pageSize:
+                            10,
+                        },
                     },
-                  },
                 }}
                 onRowDoubleClick={(
                   params,
                 ) =>
                   setIngresoDetalleId(
-                    params.row.id,
+                    params
+                      .row
+                      .id,
                   )
                 }
                 sx={{
-                  border: 0,
+                  border:
+                    0,
 
                   "& .MuiDataGrid-row":
                     {
@@ -696,16 +899,36 @@ export default function IngresosPage() {
       {/* ======================= */}
 
       <IngresoFormDialog
-        open={dialogIngresoAbierto}
-        proveedores={proveedores}
-        productos={productos}
-        categorias={categorias}
-        marcas={marcas}
-        colores={colores}
-        talles={talles}
-        loading={registrandoIngreso}
-        error={errorFormulario}
-        errors={erroresFormulario}
+        open={
+          dialogIngresoAbierto
+        }
+        proveedores={
+          proveedores
+        }
+        productos={
+          productos
+        }
+        categorias={
+          categorias
+        }
+        marcas={
+          marcas
+        }
+        colores={
+          colores
+        }
+        talles={
+          talles
+        }
+        loading={
+          registrandoIngreso
+        }
+        error={
+          errorFormulario
+        }
+        errors={
+          erroresFormulario
+        }
         onClose={
           cerrarNuevoIngreso
         }
@@ -737,14 +960,21 @@ export default function IngresosPage() {
       {/* ======================= */}
 
       <Snackbar
-        open={notificacion.open}
-        autoHideDuration={4000}
+        open={
+          notificacion.open
+        }
+        autoHideDuration={
+          4000
+        }
         onClose={
           cerrarNotificacion
         }
         anchorOrigin={{
-          vertical: "bottom",
-          horizontal: "right",
+          vertical:
+            "bottom",
+
+          horizontal:
+            "right",
         }}
       >
         <Alert
@@ -756,7 +986,9 @@ export default function IngresosPage() {
             cerrarNotificacion
           }
         >
-          {notificacion.message}
+          {
+            notificacion.message
+          }
         </Alert>
       </Snackbar>
     </Box>

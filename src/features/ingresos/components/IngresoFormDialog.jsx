@@ -47,7 +47,7 @@ function obtenerFechaActual() {
 
   return new Date(
     fecha.getTime() -
-      offset * 60 * 1000,
+    offset * 60 * 1000,
   )
     .toISOString()
     .slice(0, 10);
@@ -122,7 +122,7 @@ function prepararVariantes(
           anterior?.precio_costo ??
           String(
             variante.precio_costo ??
-              "",
+            "",
           ),
       };
     },
@@ -166,7 +166,7 @@ function productoUsaVariantes(
   return (
     Number(
       producto?.usa_variantes ??
-        1,
+      1,
     ) === 1
   );
 }
@@ -316,7 +316,7 @@ export default function IngresoFormDialog({
   const {
     guardarProducto,
     guardando:
-      guardandoProducto,
+    guardandoProducto,
   } = useProductoMutations();
 
   const productoIdParaVariante =
@@ -519,13 +519,13 @@ export default function IngresoFormDialog({
                 const cantidad =
                   Number(
                     variante.cantidad ??
-                      0,
+                    0,
                   );
 
                 const costo =
                   Number(
                     variante.precio_costo ??
-                      0,
+                    0,
                   );
 
                 if (
@@ -542,7 +542,7 @@ export default function IngresoFormDialog({
                 return (
                   acumulado +
                   cantidad *
-                    costo
+                  costo
                 );
               },
               0,
@@ -584,7 +584,7 @@ export default function IngresoFormDialog({
 
     if (
       erroresFormulario[
-        name
+      name
       ]
     ) {
       setErroresFormulario(
@@ -617,11 +617,11 @@ export default function IngresoFormDialog({
         estadoActual.map(
           (item) =>
             item.idTemporal ===
-            idTemporal
+              idTemporal
               ? {
-                  ...item,
-                  ...cambios,
-                }
+                ...item,
+                ...cambios,
+              }
               : item,
         ),
     );
@@ -663,13 +663,13 @@ export default function IngresoFormDialog({
                       String(
                         variante.id,
                       ) ===
-                      String(
-                        varianteId,
-                      )
+                        String(
+                          varianteId,
+                        )
                         ? {
-                            ...variante,
-                            ...cambios,
-                          }
+                          ...variante,
+                          ...cambios,
+                        }
                         : variante,
                   ),
               };
@@ -746,13 +746,13 @@ export default function IngresoFormDialog({
           const cantidad =
             Number(
               variante.cantidad ??
-                0,
+              0,
             );
 
           const costo =
             Number(
               variante.precio_costo ??
-                0,
+              0,
             );
 
           if (
@@ -769,7 +769,7 @@ export default function IngresoFormDialog({
           return (
             acumulado +
             cantidad *
-              costo
+            costo
           );
         },
         0,
@@ -874,8 +874,8 @@ export default function IngresoFormDialog({
             productoSeleccionado
               ?.categoria_id
               ? String(
-                  productoSeleccionado.categoria_id,
-                )
+                productoSeleccionado.categoria_id,
+              )
               : item.categoria_id,
 
           producto_id:
@@ -953,9 +953,9 @@ export default function IngresoFormDialog({
                   precio_costo:
                     String(
                       varianteInterna.precio_costo ??
-                        productoSeleccionado
-                          ?.precio_costo_default ??
-                        "",
+                      productoSeleccionado
+                        ?.precio_costo_default ??
+                      "",
                     ),
                 },
               ],
@@ -1019,9 +1019,9 @@ export default function IngresoFormDialog({
       (
         estadoActual,
       ) => [
-        ...estadoActual,
-        crearItemVacio(),
-      ],
+          ...estadoActual,
+          crearItemVacio(),
+        ],
     );
   };
 
@@ -1168,18 +1168,18 @@ export default function IngresoFormDialog({
         (
           estadoActual,
         ) => [
-          ...estadoActual.filter(
-            (producto) =>
-              String(
-                producto.id,
-              ) !==
-              String(
-                productoCompleto.id,
-              ),
-          ),
+            ...estadoActual.filter(
+              (producto) =>
+                String(
+                  producto.id,
+                ) !==
+                String(
+                  productoCompleto.id,
+                ),
+            ),
 
-          productoCompleto,
-        ],
+            productoCompleto,
+          ],
       );
 
       setDialogProductoAbierto(
@@ -1214,107 +1214,15 @@ export default function IngresoFormDialog({
                 estadoActual.map(
                   (item) =>
                     item.idTemporal ===
-                    itemCreacionId
+                      itemCreacionId
                       ? {
-                          ...item,
-
-                          categoria_id:
-                            productoCompleto.categoria_id
-                              ? String(
-                                  productoCompleto.categoria_id,
-                                )
-                              : "",
-
-                          producto_id:
-                            String(
-                              productoCompleto.id,
-                            ),
-
-                          variantes:
-                            [],
-
-                          cargandoVariantes:
-                            false,
-
-                          usa_variantes:
-                            false,
-
-                          error_variante:
-                            "No se encontró la variante interna del producto.",
-                        }
-                      : item,
-                ),
-            );
-          } else {
-            setItems(
-              (
-                estadoActual,
-              ) =>
-                estadoActual.map(
-                  (item) =>
-                    item.idTemporal ===
-                    itemCreacionId
-                      ? {
-                          ...item,
-
-                          categoria_id:
-                            productoCompleto.categoria_id
-                              ? String(
-                                  productoCompleto.categoria_id,
-                                )
-                              : "",
-
-                          producto_id:
-                            String(
-                              productoCompleto.id,
-                            ),
-
-                          variantes: [
-                            {
-                              ...varianteInterna,
-
-                              cantidad:
-                                "0",
-
-                              precio_costo:
-                                String(
-                                  varianteInterna.precio_costo ??
-                                    productoCompleto.precio_costo_default ??
-                                    "",
-                                ),
-                            },
-                          ],
-
-                          cargandoVariantes:
-                            false,
-
-                          usa_variantes:
-                            false,
-
-                          error_variante:
-                            "",
-                        }
-                      : item,
-                ),
-            );
-          }
-        } catch {
-          setItems(
-            (
-              estadoActual,
-            ) =>
-              estadoActual.map(
-                (item) =>
-                  item.idTemporal ===
-                  itemCreacionId
-                    ? {
                         ...item,
 
                         categoria_id:
                           productoCompleto.categoria_id
                             ? String(
-                                productoCompleto.categoria_id,
-                              )
+                              productoCompleto.categoria_id,
+                            )
                             : "",
 
                         producto_id:
@@ -1332,8 +1240,100 @@ export default function IngresoFormDialog({
                           false,
 
                         error_variante:
-                          "No se pudo cargar la información del producto simple.",
+                          "No se encontró la variante interna del producto.",
                       }
+                      : item,
+                ),
+            );
+          } else {
+            setItems(
+              (
+                estadoActual,
+              ) =>
+                estadoActual.map(
+                  (item) =>
+                    item.idTemporal ===
+                      itemCreacionId
+                      ? {
+                        ...item,
+
+                        categoria_id:
+                          productoCompleto.categoria_id
+                            ? String(
+                              productoCompleto.categoria_id,
+                            )
+                            : "",
+
+                        producto_id:
+                          String(
+                            productoCompleto.id,
+                          ),
+
+                        variantes: [
+                          {
+                            ...varianteInterna,
+
+                            cantidad:
+                              "0",
+
+                            precio_costo:
+                              String(
+                                varianteInterna.precio_costo ??
+                                productoCompleto.precio_costo_default ??
+                                "",
+                              ),
+                          },
+                        ],
+
+                        cargandoVariantes:
+                          false,
+
+                        usa_variantes:
+                          false,
+
+                        error_variante:
+                          "",
+                      }
+                      : item,
+                ),
+            );
+          }
+        } catch {
+          setItems(
+            (
+              estadoActual,
+            ) =>
+              estadoActual.map(
+                (item) =>
+                  item.idTemporal ===
+                    itemCreacionId
+                    ? {
+                      ...item,
+
+                      categoria_id:
+                        productoCompleto.categoria_id
+                          ? String(
+                            productoCompleto.categoria_id,
+                          )
+                          : "",
+
+                      producto_id:
+                        String(
+                          productoCompleto.id,
+                        ),
+
+                      variantes:
+                        [],
+
+                      cargandoVariantes:
+                        false,
+
+                      usa_variantes:
+                        false,
+
+                      error_variante:
+                        "No se pudo cargar la información del producto simple.",
+                    }
                     : item,
               ),
           );
@@ -1562,7 +1562,7 @@ export default function IngresoFormDialog({
             varianteCreada,
           ],
           itemActual?.variantes ??
-            [],
+          [],
         );
 
       try {
@@ -1570,7 +1570,7 @@ export default function IngresoFormDialog({
           await cargarVariantesProducto(
             productoDestino.id,
             itemActual?.variantes ??
-              [],
+            [],
           );
       } catch {
         // Mantenemos al menos
@@ -1605,8 +1605,8 @@ export default function IngresoFormDialog({
               precio_costo:
                 String(
                   varianteCreada.precio_costo ??
-                    datos.precio_costo ??
-                    "",
+                  datos.precio_costo ??
+                  "",
                 ),
             };
           },
@@ -1639,18 +1639,18 @@ export default function IngresoFormDialog({
           (
             estadoActual,
           ) => [
-            ...estadoActual.filter(
-              (producto) =>
-                String(
-                  producto.id,
-                ) !==
-                String(
-                  productoCompleto.id,
-                ),
-            ),
+              ...estadoActual.filter(
+                (producto) =>
+                  String(
+                    producto.id,
+                  ) !==
+                  String(
+                    productoCompleto.id,
+                  ),
+              ),
 
-            productoCompleto,
-          ],
+              productoCompleto,
+            ],
         );
       }
 
@@ -1673,8 +1673,8 @@ export default function IngresoFormDialog({
                 categoria_id:
                   productoCompleto.categoria_id
                     ? String(
-                        productoCompleto.categoria_id,
-                      )
+                      productoCompleto.categoria_id,
+                    )
                     : "",
 
                 producto_id:
@@ -1759,7 +1759,7 @@ export default function IngresoFormDialog({
             const cantidad =
               Number(
                 variante.cantidad ??
-                  0,
+                0,
               );
 
             const costo =
@@ -1773,18 +1773,13 @@ export default function IngresoFormDialog({
              */
 
             if (
-              Number.isNaN(
-                cantidad,
-              ) ||
-              !Number.isInteger(
+              !Number.isFinite(
                 cantidad,
               ) ||
               cantidad < 0
             ) {
               nuevosErrores.productos =
-                `La cantidad de una variante del producto ${
-                  indiceProducto +
-                  1
+                `La cantidad de una variante del producto ${indiceProducto + 1
                 } no es válida.`;
 
               return;
@@ -1798,16 +1793,15 @@ export default function IngresoFormDialog({
 
             if (
               variante.precio_costo ===
-                "" ||
+              "" ||
               Number.isNaN(
                 costo,
               ) ||
               costo < 0
             ) {
               nuevosErrores.productos =
-                `El costo de una variante del producto ${
-                  indiceProducto +
-                  1
+                `El costo de una variante del producto ${indiceProducto +
+                1
                 } no es válido.`;
 
               return;
@@ -1991,27 +1985,27 @@ export default function IngresoFormDialog({
 
           {errors.length >
             0 && (
-            <Alert
-              severity="error"
-              sx={{
-                mb: 2,
-              }}
-            >
-              {errors.map(
-                (
-                  mensaje,
-                  indice,
-                ) => (
-                  <Typography
-                    key={`${mensaje}-${indice}`}
-                    variant="body2"
-                  >
-                    • {mensaje}
-                  </Typography>
-                ),
-              )}
-            </Alert>
-          )}
+              <Alert
+                severity="error"
+                sx={{
+                  mb: 2,
+                }}
+              >
+                {errors.map(
+                  (
+                    mensaje,
+                    indice,
+                  ) => (
+                    <Typography
+                      key={`${mensaje}-${indice}`}
+                      variant="body2"
+                    >
+                      • {mensaje}
+                    </Typography>
+                  ),
+                )}
+              </Alert>
+            )}
 
           {/* ======================= */}
           {/* DATOS DEL INGRESO */}
@@ -2766,7 +2760,7 @@ export default function IngresoFormDialog({
                         {!item.cargandoVariantes &&
                           !item.error_variante &&
                           item.variantes.length ===
-                            0 && (
+                          0 && (
                             <Alert
                               severity="info"
                             >
@@ -2778,7 +2772,7 @@ export default function IngresoFormDialog({
 
                         {!item.cargandoVariantes &&
                           item.variantes.length >
-                            0 && (
+                          0 && (
                             <Stack
                               spacing={1}
                             >
@@ -2894,13 +2888,13 @@ export default function IngresoFormDialog({
                                   const cantidad =
                                     Number(
                                       variante.cantidad ??
-                                        0,
+                                      0,
                                     );
 
                                   const costo =
                                     Number(
                                       variante.precio_costo ??
-                                        0,
+                                      0,
                                     );
 
                                   return (
@@ -2960,16 +2954,16 @@ export default function IngresoFormDialog({
 
                                           {usaVariantes &&
                                             variante.codigo_barras && (
-                                            <Typography
-                                              variant="caption"
-                                              color="text.secondary"
-                                            >
-                                              Código:{" "}
-                                              {
-                                                variante.codigo_barras
-                                              }
-                                            </Typography>
-                                          )}
+                                              <Typography
+                                                variant="caption"
+                                                color="text.secondary"
+                                              >
+                                                Código:{" "}
+                                                {
+                                                  variante.codigo_barras
+                                                }
+                                              </Typography>
+                                            )}
 
                                           {!usaVariantes && (
                                             <Typography
@@ -3010,7 +3004,7 @@ export default function IngresoFormDialog({
                                           >
                                             {Number(
                                               variante.stock_actual ??
-                                                0,
+                                              0,
                                             )}
                                           </Typography>
                                         </Grid>
@@ -3057,14 +3051,10 @@ export default function IngresoFormDialog({
                                               loading
                                             }
                                             slotProps={{
-                                              htmlInput:
-                                                {
-                                                  min:
-                                                    0,
-
-                                                  step:
-                                                    1,
-                                                },
+                                              htmlInput: {
+                                                min: 0,
+                                                step: "0.001",
+                                              },
                                             }}
                                           />
                                         </Grid>
@@ -3112,13 +3102,13 @@ export default function IngresoFormDialog({
                                             }
                                             slotProps={{
                                               htmlInput:
-                                                {
-                                                  min:
-                                                    0,
+                                              {
+                                                min:
+                                                  0,
 
-                                                  step:
-                                                    "0.01",
-                                                },
+                                                step:
+                                                  "0.01",
+                                              },
                                             }}
                                           />
                                         </Grid>
@@ -3149,7 +3139,7 @@ export default function IngresoFormDialog({
                                           >
                                             {formatearMoneda(
                                               cantidad *
-                                                costo,
+                                              costo,
                                             )}
                                           </Typography>
                                         </Grid>

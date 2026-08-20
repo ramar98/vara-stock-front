@@ -1140,7 +1140,7 @@ export default function VentaFormDialog({
               ? `Seleccioná la variante del ítem ${numeroItem}.`
               : `No se encontró la variante interna del producto del ítem ${numeroItem}.`;
         } else if (
-          !Number.isInteger(
+          !Number.isFinite(
             cantidad,
           ) ||
           cantidad <= 0
@@ -1152,7 +1152,7 @@ export default function VentaFormDialog({
           stockDisponible
         ) {
           nuevosErrores.productos =
-            `El ítem ${numeroItem} solo tiene ${stockDisponible} unidades disponibles.`;
+            `El ítem ${numeroItem} solo tiene ${stockDisponible} disponibles.`;
         } else if (
           item.precio_unitario ===
             "" ||
@@ -2070,7 +2070,7 @@ export default function VentaFormDialog({
                             htmlInput:
                               {
                                 min:
-                                  1,
+                                  0.001,
 
                                 max:
                                   Number(
@@ -2079,7 +2079,7 @@ export default function VentaFormDialog({
                                   ),
 
                                 step:
-                                  1,
+                                  "0.001",
                               },
                           }}
                         />

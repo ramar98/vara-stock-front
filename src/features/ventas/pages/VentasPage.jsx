@@ -63,6 +63,18 @@ function formatearMoneda(valor) {
   }).format(Number(valor ?? 0));
 }
 
+function formatearCantidad(valor) {
+  return Number(
+    valor ?? 0,
+  ).toLocaleString(
+    "es-AR",
+    {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 3,
+    },
+  );
+}
+
 function formatearFecha(valor) {
   if (!valor) {
     return "-";
@@ -70,49 +82,90 @@ function formatearFecha(valor) {
 
   const fecha = new Date(valor);
 
-  if (Number.isNaN(fecha.getTime())) {
+  if (
+    Number.isNaN(
+      fecha.getTime(),
+    )
+  ) {
     return "-";
   }
 
-  return new Intl.DateTimeFormat("es-AR", {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(fecha);
+  return new Intl.DateTimeFormat(
+    "es-AR",
+    {
+      dateStyle: "short",
+      timeStyle: "short",
+    },
+  ).format(fecha);
 }
 
-function obtenerProductos(respuesta) {
-  if (Array.isArray(respuesta)) {
+function obtenerProductos(
+  respuesta,
+) {
+  if (
+    Array.isArray(
+      respuesta,
+    )
+  ) {
     return respuesta;
   }
 
-  if (Array.isArray(respuesta?.data)) {
+  if (
+    Array.isArray(
+      respuesta?.data,
+    )
+  ) {
     return respuesta.data;
   }
 
   return [];
 }
 
-function obtenerEtiquetaMetodoPago(valor) {
-  const metodo = METODOS_PAGO.find(
-    (item) => item.value === valor,
-  );
+function obtenerEtiquetaMetodoPago(
+  valor,
+) {
+  const metodo =
+    METODOS_PAGO.find(
+      (item) =>
+        item.value ===
+        valor,
+    );
 
-  return metodo?.label || valor || "-";
+  return (
+    metodo?.label ||
+    valor ||
+    "-"
+  );
 }
 
-function obtenerColorMetodoPago(valor) {
+function obtenerColorMetodoPago(
+  valor,
+) {
   const colores = {
-    EFECTIVO: "success",
-    TRANSFERENCIA: "info",
-    TARJETA: "primary",
-    OTRO: "default",
+    EFECTIVO:
+      "success",
+
+    TRANSFERENCIA:
+      "info",
+
+    TARJETA:
+      "primary",
+
+    OTRO:
+      "default",
   };
 
-  return colores[valor] || "default";
+  return (
+    colores[valor] ||
+    "default"
+  );
 }
 
 export default function VentasPage() {
-  const [filtros, setFiltros] = useState({
+  const [
+    filtros,
+    setFiltros,
+  ] = useState({
     fechaDesde: "",
     fechaHasta: "",
     clienteId: "",
@@ -130,9 +183,14 @@ export default function VentasPage() {
   } = useVentas(filtros);
 
   const {
-    data: productosRespuesta,
-    isLoading: cargandoProductos,
-    isError: errorProductos,
+    data:
+      productosRespuesta,
+
+    isLoading:
+      cargandoProductos,
+
+    isError:
+      errorProductos,
   } = useProductos();
 
   const {
@@ -141,13 +199,16 @@ export default function VentasPage() {
     errorClientes,
   } = useClientes();
 
-  const productos = useMemo(
-    () =>
-      obtenerProductos(
+  const productos =
+    useMemo(
+      () =>
+        obtenerProductos(
+          productosRespuesta,
+        ),
+      [
         productosRespuesta,
-      ),
-    [productosRespuesta],
-  );
+      ],
+    );
 
   const [
     ventaDialogAbierto,
@@ -189,123 +250,216 @@ export default function VentasPage() {
     });
   };
 
-  const cerrarNotificacion = () => {
-    setNotificacion(
-      (estadoActual) => ({
+  const cerrarNotificacion =
+    () => {
+      setNotificacion(
+        (
+          estadoActual,
+        ) => ({
+          ...estadoActual,
+          open: false,
+        }),
+      );
+    };
+
+  /*
+   * ==================================
+   * FILTROS
+   * ==================================
+   */
+
+  const cambiarFiltro = (
+    event,
+  ) => {
+    const {
+      name,
+      value,
+    } = event.target;
+
+    setFiltros(
+      (
+        estadoActual,
+      ) => ({
         ...estadoActual,
-        open: false,
+        [name]: value,
       }),
     );
   };
 
-  const cambiarFiltro = (event) => {
-    const { name, value } =
-      event.target;
+  const limpiarFiltros =
+    () => {
+      setFiltros({
+        fechaDesde: "",
+        fechaHasta: "",
+        clienteId: "",
+        metodoPago: "",
+      });
+    };
 
-    setFiltros((estadoActual) => ({
-      ...estadoActual,
-      [name]: value,
-    }));
-  };
+  /*
+   * ==================================
+   * NUEVA VENTA
+   * ==================================
+   */
 
-  const limpiarFiltros = () => {
-    setFiltros({
-      fechaDesde: "",
-      fechaHasta: "",
-      clienteId: "",
-      metodoPago: "",
-    });
-  };
-
-  const abrirNuevaVenta = () => {
-    setErrorFormulario("");
-    setErroresFormulario([]);
-    setVentaDialogAbierto(true);
-  };
-
-  const cerrarNuevaVenta = () => {
-    if (registrandoVenta) {
-      return;
-    }
-
-    setVentaDialogAbierto(false);
-    setErrorFormulario("");
-    setErroresFormulario([]);
-  };
-
-  const guardarVenta = async (datos) => {
-    setErrorFormulario("");
-    setErroresFormulario([]);
-
-    const resultado =
-      await registrarVenta(datos);
-
-    if (!resultado.success) {
+  const abrirNuevaVenta =
+    () => {
       setErrorFormulario(
-        resultado.message,
+        "",
       );
 
       setErroresFormulario(
-        resultado.errors ?? [],
+        [],
       );
 
-      return;
-    }
-
-    setVentaDialogAbierto(false);
-
-    /*
-     * La API devuelve la venta completa
-     * recién creada.
-     */
-    const ventaCreada =
-      resultado.data;
-
-    /*
-     * Abrimos automáticamente el detalle
-     * para poder imprimir el ticket.
-     */
-    if (ventaCreada?.id) {
-      setVentaDetalleId(
-        ventaCreada.id,
+      setVentaDialogAbierto(
+        true,
       );
-    }
+    };
 
-    mostrarNotificacion(
-      resultado.message,
-      "success",
-    );
-  };
+  const cerrarNuevaVenta =
+    () => {
+      if (
+        registrandoVenta
+      ) {
+        return;
+      }
+
+      setVentaDialogAbierto(
+        false,
+      );
+
+      setErrorFormulario(
+        "",
+      );
+
+      setErroresFormulario(
+        [],
+      );
+    };
+
+  const guardarVenta =
+    async (
+      datos,
+    ) => {
+      setErrorFormulario(
+        "",
+      );
+
+      setErroresFormulario(
+        [],
+      );
+
+      const resultado =
+        await registrarVenta(
+          datos,
+        );
+
+      if (
+        !resultado.success
+      ) {
+        setErrorFormulario(
+          resultado.message,
+        );
+
+        setErroresFormulario(
+          resultado.errors ??
+            [],
+        );
+
+        return;
+      }
+
+      setVentaDialogAbierto(
+        false,
+      );
+
+      const ventaCreada =
+        resultado.data;
+
+      if (
+        ventaCreada?.id
+      ) {
+        setVentaDetalleId(
+          ventaCreada.id,
+        );
+      }
+
+      mostrarNotificacion(
+        resultado.message,
+        "success",
+      );
+    };
+
+  /*
+   * ==================================
+   * COLUMNAS
+   * ==================================
+   */
 
   const columnas = [
     {
-      field: "id",
-      headerName: "N.º",
-      width: 80,
-    },
-    {
-      field: "fecha",
-      headerName: "Fecha",
-      width: 175,
+      field:
+        "id",
 
-      valueFormatter: (value) =>
-        formatearFecha(value),
-    },
-    {
-      field: "cliente",
-      headerName: "Cliente",
-      minWidth: 190,
-      flex: 1,
+      headerName:
+        "N.º",
 
-      valueGetter: (value) =>
-        value || "Consumidor final",
+      width:
+        80,
     },
-    {
-      field: "metodo_pago",
-      headerName: "Método",
-      width: 160,
 
-      renderCell: (params) => (
+    {
+      field:
+        "fecha",
+
+      headerName:
+        "Fecha",
+
+      width:
+        175,
+
+      valueFormatter: (
+        value,
+      ) =>
+        formatearFecha(
+          value,
+        ),
+    },
+
+    {
+      field:
+        "cliente",
+
+      headerName:
+        "Cliente",
+
+      minWidth:
+        190,
+
+      flex:
+        1,
+
+      valueGetter: (
+        value,
+      ) =>
+        value ||
+        "Consumidor final",
+    },
+
+    {
+      field:
+        "metodo_pago",
+
+      headerName:
+        "Método",
+
+      width:
+        160,
+
+      renderCell: (
+        params,
+      ) => (
         <Chip
           size="small"
           label={obtenerEtiquetaMetodoPago(
@@ -318,75 +472,169 @@ export default function VentasPage() {
         />
       ),
     },
-    {
-      field: "cantidad_items",
-      headerName: "Ítems",
-      width: 90,
-      align: "center",
-      headerAlign: "center",
 
-      valueGetter: (value) =>
-        Number(value ?? 0),
+    {
+      field:
+        "cantidad_items",
+
+      headerName:
+        "Ítems",
+
+      width:
+        90,
+
+      align:
+        "center",
+
+      headerAlign:
+        "center",
+
+      valueGetter: (
+        value,
+      ) =>
+        Number(
+          value ?? 0,
+        ),
     },
-    {
-      field: "cantidad_unidades",
-      headerName: "Unidades",
-      width: 110,
-      align: "center",
-      headerAlign: "center",
 
-      valueGetter: (value) =>
-        Number(value ?? 0),
+    {
+      field:
+        "cantidad_unidades",
+
+      headerName:
+        "Cantidad",
+
+      width:
+        120,
+
+      align:
+        "center",
+
+      headerAlign:
+        "center",
+
+      renderCell: (
+        params,
+      ) => (
+        <Chip
+          label={formatearCantidad(
+            params.value,
+          )}
+          size="small"
+          color="primary"
+          variant="outlined"
+        />
+      ),
     },
-    {
-      field: "subtotal",
-      headerName: "Subtotal",
-      width: 140,
-      align: "right",
-      headerAlign: "right",
 
-      valueFormatter: (value) =>
-        formatearMoneda(value),
+    {
+      field:
+        "subtotal",
+
+      headerName:
+        "Subtotal",
+
+      width:
+        140,
+
+      align:
+        "right",
+
+      headerAlign:
+        "right",
+
+      valueFormatter: (
+        value,
+      ) =>
+        formatearMoneda(
+          value,
+        ),
     },
-    {
-      field: "descuento",
-      headerName: "Descuento",
-      width: 130,
-      align: "right",
-      headerAlign: "right",
 
-      valueFormatter: (value) =>
-        formatearMoneda(value),
+    {
+      field:
+        "descuento",
+
+      headerName:
+        "Descuento",
+
+      width:
+        130,
+
+      align:
+        "right",
+
+      headerAlign:
+        "right",
+
+      valueFormatter: (
+        value,
+      ) =>
+        formatearMoneda(
+          value,
+        ),
     },
-    {
-      field: "total",
-      headerName: "Total",
-      width: 150,
-      align: "right",
-      headerAlign: "right",
 
-      valueFormatter: (value) =>
-        formatearMoneda(value),
+    {
+      field:
+        "total",
+
+      headerName:
+        "Total",
+
+      width:
+        150,
+
+      align:
+        "right",
+
+      headerAlign:
+        "right",
+
+      valueFormatter: (
+        value,
+      ) =>
+        formatearMoneda(
+          value,
+        ),
     },
-    {
-      field: "acciones",
-      type: "actions",
-      headerName: "Acciones",
-      width: 100,
-      align: "center",
-      headerAlign: "center",
 
-      getActions: (params) => [
+    {
+      field:
+        "acciones",
+
+      type:
+        "actions",
+
+      headerName:
+        "Acciones",
+
+      width:
+        100,
+
+      align:
+        "center",
+
+      headerAlign:
+        "center",
+
+      getActions: (
+        params,
+      ) => [
         <GridActionsCellItem
           key="detalle"
-          icon={<VisibilityIcon />}
+          icon={
+            <VisibilityIcon />
+          }
           label="Ver detalle"
           onClick={() =>
             setVentaDetalleId(
               params.row.id,
             )
           }
-          showInMenu={false}
+          showInMenu={
+            false
+          }
         />,
       ],
     },
@@ -399,10 +647,16 @@ export default function VentasPage() {
   const ventaDeshabilitada =
     cargandoDatosIniciales ||
     errorProductos ||
-    Boolean(errorClientes);
+    Boolean(
+      errorClientes,
+    );
 
   return (
     <Box>
+      {/* ======================= */}
+      {/* ENCABEZADO */}
+      {/* ======================= */}
+
       <Stack
         direction={{
           xs: "column",
@@ -425,7 +679,8 @@ export default function VentasPage() {
           <Typography
             variant="h4"
             sx={{
-              fontWeight: 700,
+              fontWeight:
+                700,
             }}
           >
             Ventas
@@ -434,7 +689,9 @@ export default function VentasPage() {
           <Typography
             variant="body2"
             color="text.secondary"
-            sx={{ mt: 0.5 }}
+            sx={{
+              mt: 0.5,
+            }}
           >
             Registrá ventas y descontá automáticamente el stock.
           </Typography>
@@ -442,32 +699,50 @@ export default function VentasPage() {
 
         <Button
           variant="contained"
-          startIcon={<AddIcon />}
-          onClick={abrirNuevaVenta}
-          disabled={ventaDeshabilitada}
+          startIcon={
+            <AddIcon />
+          }
+          onClick={
+            abrirNuevaVenta
+          }
+          disabled={
+            ventaDeshabilitada
+          }
         >
           Nueva venta
         </Button>
       </Stack>
 
-      {(errorProductos ||
-        errorClientes) && (
-          <Alert
-            severity="warning"
-            sx={{ mb: 2 }}
-          >
-            No se pudieron cargar todos los datos necesarios para
-            registrar ventas.
-          </Alert>
-        )}
+      {(
+        errorProductos ||
+        errorClientes
+      ) && (
+        <Alert
+          severity="warning"
+          sx={{
+            mb: 2,
+          }}
+        >
+          No se pudieron cargar todos los datos necesarios para registrar ventas.
+        </Alert>
+      )}
 
-      <Card sx={{ mb: 3 }}>
+      {/* ======================= */}
+      {/* FILTROS */}
+      {/* ======================= */}
+
+      <Card
+        sx={{
+          mb: 3,
+        }}
+      >
         <CardContent>
           <Grid
             container
             spacing={2}
             sx={{
-              alignItems: "center",
+              alignItems:
+                "center",
             }}
           >
             <Grid
@@ -489,7 +764,8 @@ export default function VentasPage() {
                 }
                 slotProps={{
                   inputLabel: {
-                    shrink: true,
+                    shrink:
+                      true,
                   },
                 }}
               />
@@ -514,7 +790,8 @@ export default function VentasPage() {
                 }
                 slotProps={{
                   inputLabel: {
-                    shrink: true,
+                    shrink:
+                      true,
                   },
                 }}
               />
@@ -546,7 +823,9 @@ export default function VentasPage() {
                 </MenuItem>
 
                 {clientes.map(
-                  (cliente) => (
+                  (
+                    cliente,
+                  ) => (
                     <MenuItem
                       key={
                         cliente.id
@@ -555,7 +834,9 @@ export default function VentasPage() {
                         cliente.id
                       }
                     >
-                      {cliente.nombre}
+                      {
+                        cliente.nombre
+                      }
                     </MenuItem>
                   ),
                 )}
@@ -581,7 +862,9 @@ export default function VentasPage() {
                 }
               >
                 {METODOS_PAGO.map(
-                  (metodo) => (
+                  (
+                    metodo,
+                  ) => (
                     <MenuItem
                       key={
                         metodo.value ||
@@ -591,20 +874,29 @@ export default function VentasPage() {
                         metodo.value
                       }
                     >
-                      {metodo.label}
+                      {
+                        metodo.label
+                      }
                     </MenuItem>
                   ),
                 )}
               </TextField>
             </Grid>
 
-            <Grid size={12}>
+            <Grid
+              size={12}
+            >
               <Stack
                 direction={{
-                  xs: "column",
-                  sm: "row",
+                  xs:
+                    "column",
+
+                  sm:
+                    "row",
                 }}
-                spacing={1}
+                spacing={
+                  1
+                }
                 sx={{
                   justifyContent:
                     "flex-end",
@@ -624,7 +916,9 @@ export default function VentasPage() {
                   startIcon={
                     actualizandoVentas ? (
                       <CircularProgress
-                        size={17}
+                        size={
+                          17
+                        }
                       />
                     ) : (
                       <RefreshIcon />
@@ -637,7 +931,9 @@ export default function VentasPage() {
                     actualizandoVentas
                   }
                 >
-                  Actualizar
+                  {actualizandoVentas
+                    ? "Actualizando..."
+                    : "Actualizar"}
                 </Button>
               </Stack>
             </Grid>
@@ -645,16 +941,26 @@ export default function VentasPage() {
         </CardContent>
       </Card>
 
+      {/* ======================= */}
+      {/* TABLA */}
+      {/* ======================= */}
+
       <Card>
         <CardContent>
           {cargandoVentas && (
             <Box
               sx={{
-                minHeight: 280,
-                display: "flex",
+                minHeight:
+                  280,
+
+                display:
+                  "flex",
+
                 justifyContent:
                   "center",
-                alignItems: "center",
+
+                alignItems:
+                  "center",
               }}
             >
               <CircularProgress />
@@ -663,12 +969,16 @@ export default function VentasPage() {
 
           {!cargandoVentas &&
             errorVentas && (
-              <Alert severity="error">
+              <Alert
+                severity="error"
+              >
                 {errorVentas
-                  ?.response?.data
+                  ?.response
+                  ?.data
                   ?.message ||
                   errorVentas
-                    ?.response?.data
+                    ?.response
+                    ?.data
                     ?.error ||
                   errorVentas
                     ?.message ||
@@ -679,21 +989,28 @@ export default function VentasPage() {
           {!cargandoVentas &&
             !errorVentas &&
             ventas.length ===
-            0 && (
-              <Alert severity="info">
-                No hay ventas registradas para los filtros
-                seleccionados.
+              0 && (
+              <Alert
+                severity="info"
+              >
+                No hay ventas registradas para los filtros seleccionados.
               </Alert>
             )}
 
           {!cargandoVentas &&
             !errorVentas &&
             ventas.length >
-            0 && (
+              0 && (
               <DataGrid
-                rows={ventas}
-                columns={columnas}
-                getRowId={(row) =>
+                rows={
+                  ventas
+                }
+                columns={
+                  columnas
+                }
+                getRowId={(
+                  row,
+                ) =>
                   row.id
                 }
                 autoHeight
@@ -704,41 +1021,65 @@ export default function VentasPage() {
                   50,
                 ]}
                 initialState={{
-                  pagination: {
-                    paginationModel: {
-                      page: 0,
-                      pageSize: 10,
+                  pagination:
+                    {
+                      paginationModel:
+                        {
+                          page:
+                            0,
+
+                          pageSize:
+                            10,
+                        },
                     },
-                  },
                 }}
                 onRowDoubleClick={(
                   params,
                 ) =>
                   setVentaDetalleId(
-                    params.row.id,
+                    params
+                      .row
+                      .id,
                   )
                 }
                 sx={{
-                  border: 0,
+                  border:
+                    0,
 
                   "& .MuiDataGrid-row":
-                  {
-                    cursor:
-                      "pointer",
-                  },
+                    {
+                      cursor:
+                        "pointer",
+                    },
                 }}
               />
             )}
         </CardContent>
       </Card>
 
+      {/* ======================= */}
+      {/* NUEVA VENTA */}
+      {/* ======================= */}
+
       <VentaFormDialog
-        open={ventaDialogAbierto}
-        clientes={clientes}
-        productos={productos}
-        loading={registrandoVenta}
-        error={errorFormulario}
-        errors={erroresFormulario}
+        open={
+          ventaDialogAbierto
+        }
+        clientes={
+          clientes
+        }
+        productos={
+          productos
+        }
+        loading={
+          registrandoVenta
+        }
+        error={
+          errorFormulario
+        }
+        errors={
+          erroresFormulario
+        }
         onClose={
           cerrarNuevaVenta
         }
@@ -746,6 +1087,10 @@ export default function VentasPage() {
           guardarVenta
         }
       />
+
+      {/* ======================= */}
+      {/* DETALLE */}
+      {/* ======================= */}
 
       <VentaDetalleDialog
         open={Boolean(
@@ -761,15 +1106,26 @@ export default function VentasPage() {
         }
       />
 
+      {/* ======================= */}
+      {/* NOTIFICACIÓN */}
+      {/* ======================= */}
+
       <Snackbar
-        open={notificacion.open}
-        autoHideDuration={4000}
+        open={
+          notificacion.open
+        }
+        autoHideDuration={
+          4000
+        }
         onClose={
           cerrarNotificacion
         }
         anchorOrigin={{
-          vertical: "bottom",
-          horizontal: "right",
+          vertical:
+            "bottom",
+
+          horizontal:
+            "right",
         }}
       >
         <Alert
@@ -781,7 +1137,9 @@ export default function VentasPage() {
             cerrarNotificacion
           }
         >
-          {notificacion.message}
+          {
+            notificacion.message
+          }
         </Alert>
       </Snackbar>
     </Box>
